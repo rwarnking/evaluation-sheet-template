@@ -1,0 +1,244 @@
+\documentclass{article}
+
+%%%%%%%%%%%%
+% Packages %
+%%%%%%%%%%%%
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.5cm]{geometry}
+\usepackage{array, tabularx}
+\usepackage[dvipsnames, table]{xcolor}
+\usepackage{listings}
+%\usepackage{tcolorbox}
+\usepackage{enumitem}
+\usepackage{pgffor}
+\usepackage{xinttools}
+\usepackage{xintfrac}
+\usepackage{forloop}
+\usepackage{calc}
+\usepackage{tikz}
+%\usepackage{csvsimple}
+
+\setlength{\parindent}{0pt}
+
+%%%%%%%%%%
+% Colors %
+%%%%%%%%%%
+\definecolor{javared}{rgb}{0.6,0,0} % for strings
+\definecolor{javagreen}{rgb}{0.25,0.5,0.35} % comments
+\definecolor{javapurple}{rgb}{0.5,0,0.35} % keywords
+\definecolor{javadocblue}{rgb}{0.25,0.35,0.75} % javadoc
+\lstset{
+    language=Java,
+    basicstyle=\ttfamily,
+    keywordstyle=\color{javapurple}\bfseries,
+    stringstyle=\color{javared},
+    commentstyle=\color{javagreen},
+    morecomment=[s][\color{javadocblue}]{/**}{*/},
+    numbers=left,
+    numberstyle=\tiny\color{black},
+    stepnumber=2,
+    numbersep=10pt,
+    tabsize=4,
+    showspaces=false,
+    showstringspaces=false,
+    %morekeywords={}
+}
+
+%%%%%%%%%%%%
+% Commands %
+%%%%%%%%%%%%
+% Thick Tabular Lines
+\makeatletter
+\newcommand{\thickhline}{%
+    \noalign {\ifnum 0=`}\fi \hrule height 1pt
+    \futurelet \reserved@a \@xhline
+}
+\newcolumntype{"}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
+\makeatother
+
+\newcommand{\cells}{& & & &}
+\newcommand{\subtask}[2]{\small #1 & #2 \cells}
+
+\def\koma{,}
+\newcommand{\klam}[1]{(#1)}
+\def\lklam{(}
+\def\rklam{)}
+\def\elklam{[}
+\def\erklam{]}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Add a teaching person
+\newcommand{\tutorfirst}{0}
+\newcommand{\tutorsecond}{1}
+
+% Select a teaching person
+\newcommand{\tutor}{\tutorfirst}
+% \newcommand{\tutor}{\tutorsecond}
+
+% Select or add a course name
+\def\coursename{example-coursename-1}
+% \def\coursename{example-coursename-2}
+
+% Select or add a semester
+\def\semester{201819}
+% \def\semester{2018}
+
+% Select or add a sheet
+\def\sheetnumber{01}
+
+% Add a language
+\newcommand{\english}{0}
+\newcommand{\german}{1}
+% Select a language
+\def\pdflanguage{\english}
+
+%%%%%%%%%%%%%%%
+% Input files %
+%%%%%%%%%%%%%%%
+\input{\coursename"_"\semester/persondata.tex}
+\input{\coursename"_"\semester/sheet_\sheetnumber.tex}
+
+% TODO how to handle empty lists with no participants
+% TODO how to mark and process participants that dropped out or changed
+\initpersons
+
+\newcommand{\createtask}[3]{
+    \textbf{#1} & \textbf{#2} \cells \\ \hline
+}
+
+\newcounter{iter}
+\newcounter{iterA}
+% \pgfmathsetmacro\iterA{int(#1+4)}
+
+% http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
+% https://en.wikibooks.org/wiki/LaTeX/Counters
+\newcommand{\printheader}[1]{%
+    \pgfmathparse{int(#1 - 4)}%
+    \setcounter{iterA}{0}%
+
+    \xintifEq{\pdflanguage}{\english}%
+    {%
+        \textbf{Assignment} & \textbf{Pts}
+    } {%
+        \textbf{Aufgabe} & \textbf{Pkt}
+    }
+    % Add names
+    \xintForfour ##1##2##3##4 in \persondata \do
+    {%
+        \xintifCmp{#1}{\value{iterA}}{}{}%
+        {%
+            \xintifCmp{\value{iterA}}{#1-5}{}{}%
+            {%
+                & ##1,\newline ##2%
+            }%
+        }%
+        %#1 \arabic{iterA}
+        %\ifnum #1>\value{iterA}%
+            %& ##1,\newline ##2 #1 \arabic{iterA}%
+        %\fi%
+        \addtocounter{iterA}{1}%
+    }%
+    % TODO add missing "and"s
+    \\ \hline
+
+    \setcounter{iterA}{0}
+    \xintifEq{\pdflanguage}{\english}%
+    {%
+        \textbf{Field of study} &
+    } {%
+        \textbf{Studienfach} &
+    }
+    % Add field of study
+    \xintForfour ##1##2##3##4 in \persondata \do
+    {%
+        \xintifCmp{#1}{\value{iterA}}{}{}%
+        {%
+            \xintifCmp{\value{iterA}}{#1-5}{}{}%
+            {%
+                & ##3%
+            }%
+        }%
+        \addtocounter{iterA}{1}%
+    }%
+    \\ \hline
+
+    \setcounter{iterA}{0}
+    \xintifEq{\pdflanguage}{\english}%
+    {%
+        \textbf{Day \& Time} &
+    } {%
+        \textbf{Tag \& Uhrzeit} &
+    }
+    % Add dates
+    \xintForfour ##1##2##3##4 in \persondata \do
+    {%
+        \xintifCmp{#1}{\value{iterA}}{}{}%
+        {%
+            \xintifCmp{\value{iterA}}{#1-5}{}{}%
+            {%
+                & ##4%
+            }%
+        }%
+        \addtocounter{iterA}{1}%
+    }%
+    \\ \thickhline
+}
+
+\newcommand{\sumrow}{%
+    \xintifEq{\pdflanguage}{\english}%
+    {%
+        \textbf{Sum:} & \cells \\%
+    } {%
+        \textbf{Summe:} & \cells \\%
+    }%
+}
+
+\setlength\extrarowheight{2pt}
+\setlist{nosep,after=\vspace*{-\baselineskip}}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+%--------------------------------------------------------------
+
+\begin{document}
+
+    \newcounter{allcol}
+    \setcounter{allcol}{3}
+
+    \xintForfour #1#2#3#4 in \persondata \do
+    {
+        \addtocounter{allcol}{1}
+    }
+    %\addtocounter{nbcol}{-1}
+
+    \newcounter{tablenumber}
+    \newcounter{max}
+    \setcounter{max}{\value{allcol}/4}
+    \newcounter{sth}
+
+    \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
+
+        \pgfmathparse{int((\value{tablenumber}+1)*4)}
+        \setcounter{sth}{\pgfmathresult}
+        % \pgfmathsetmacro{\sth}{int((\value{tablenumber}+1)*4)}
+
+        \begin{tabularx}{\textwidth}{ X"r"X*{3}{|X} }
+            %\pgfmathresult
+            \printheader{\arabic{sth}}
+
+            \xintForthree #1#2#3 in \taskdata \do
+            {
+                \createtask{#1}{#2}{#3}
+                \xintForpair #4#5 in {#3} \do
+                {
+                    \subtask{#4}{#5} \\ \hline
+                }
+                \thickhline
+            }
+            \sumrow
+        \end{tabularx}
+    }
+
+\end{document}

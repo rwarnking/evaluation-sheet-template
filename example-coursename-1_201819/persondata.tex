@@ -1,0 +1,37 @@
+\newcommand{\initpersons}
+{
+    \xintifEq{\tutor}{\tutorfirst}
+    {
+        \newcommand{\persondata}
+        {
+            % Synatx:
+            % Since each entry can have mixum 4 entries, the following information were
+            % prioritised:
+            % name participant 1, name participant 2,
+            % field of study for both participants in one entry + semester number,
+            % date of meeting
+            % Of course it is possible to replace this information to your liking
+            (First-01 Lastname01, First-02 Lastname02, Discipline B.Sc. [3], Mo. 08:30),
+            (First-03 Lastname03, First-04 Lastname04, Disc/Disc. B.Sc. [1], Mo. 09:00),
+            (First-05 Lastname05, First-06 Lastname06, Discipline B.Sc. [5$|$1], Mo. 09:30),
+            (First-07 Lastname07, First-08 Lastname08, Disc/n.s. B.Sc. [1], Mo. 14:30),
+            (First-09 Lastname09, First-10 Lastname10, Disc B.Sc./M.Sc. [3$|$1], Mo. 15:00),
+            (First-11 Lastname11, First-12 Lastname12, Disc B.Sc. [1], Tue. 18:00),
+            (First-13 Lastname13, First-14 Lastname14, Disc B.Sc. [1], Tue. 19:00),
+            (First-15 Lastname15, First-16 Lastname16, Disc B.Sc. [1], Wed. 12:00),
+            (First-17 Lastname17, First-18 Lastname18, Disc B.Sc. [1], Wed. 13:00),
+            (First-19 Lastname19, First-20 Lastname20, Disc B.Sc. [1], Wed. 14:30),
+            (First-21 Lastname21, First-22 Lastname22, Disc B.Sc. [1], Thu. 15:00),
+            (First-23 Lastname23, First-24 Lastname24, Disc B.Sc. [1], Thu. 16:00),
+            (First-25 Lastname25, First-26 Lastname26, Disc B.Sc. [1], Thu. 16:30),
+            (First-27 Lastname27, First-28 Lastname28, Disc B.Sc. [1], Fr. 9:00),
+            (First-29 Lastname29, First-30 Lastname30, Disc B.Sc. [1], Fr. 13:30)
+        }
+    }
+    {
+        \newcommand{\persondata}
+        {
+            ( , , , )
+        }
+    }
+}
