@@ -1,5 +1,11 @@
 \documentclass{article}
 
+\RequirePackage{l3benchmark}
+\ExplSyntaxOn
+\AtEndDocument { \benchmark_toc: }
+\benchmark_tic:
+\ExplSyntaxOff
+
 %%%%%%%%%%%%
 % Packages %
 %%%%%%%%%%%%
@@ -145,6 +151,9 @@
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
                 &%
+                % \xDTLassignfirstmatch{players}{\personid}{##1}{\name=\firstname,\points=\lastname}
+                % \name \points,\newline%
+                % a b
                 \DTLfetch{players}{\personid}{##1}{\firstname}
                 \DTLfetch{players}{\personid}{##1}{\lastname},\newline%
                 \DTLfetch{players}{\personid}{##2}{\firstname}
@@ -178,6 +187,7 @@
                 % TODO does not work if the studyfield is empty
                 & \DTLfetch{players}{\personid}{##1}{\studyfield}\newline%
                 \DTLfetch{players}{\personid}{##2}{\studyfield}
+                % & a \newline b
                 %\DTLfetch{players}{\personid}{##2}{semester}
                 % ##3%
             }%
