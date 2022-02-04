@@ -1,5 +1,6 @@
 \documentclass{article}
 
+% TODO remove
 \RequirePackage{l3benchmark}
 \ExplSyntaxOn
 \AtEndDocument { \benchmark_toc: }
@@ -54,28 +55,6 @@
     %morekeywords={}
 }
 
-%%%%%%%%%%%%
-% Commands %
-%%%%%%%%%%%%
-% Thick Tabular Lines
-\makeatletter
-\newcommand{\thickhline}{%
-    \noalign {\ifnum 0=`}\fi \hrule height 1pt
-    \futurelet \reserved@a \@xhline
-}
-\newcolumntype{"}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
-\makeatother
-
-\newcommand{\cells}{& & & &}
-\newcommand{\subtask}[2]{\small #1 & #2 \cells}
-
-\def\koma{,}
-\newcommand{\klam}[1]{(#1)}
-\def\lklam{(}
-\def\rklam{)}
-\def\elklam{[}
-\def\erklam{]}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -103,6 +82,38 @@
 \newcommand{\german}{1}
 % Select a language
 \def\pdflanguage{\english}
+
+% TODO automate
+\newcommand{\columns}{4}
+\newcommand{\columnsMO}{3}
+\newcommand{\columnsPO}{5}
+
+%%%%%%%%%%%%
+% Commands %
+%%%%%%%%%%%%
+% Thick Tabular Lines
+\makeatletter
+\newcommand{\thickhline}{%
+    \noalign {\ifnum 0=`}\fi \hrule height 1pt
+    \futurelet \reserved@a \@xhline
+}
+\newcolumntype{"}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
+\makeatother
+
+\edef\innersequence {\xintSeq{1}{\columns}}%
+\newcommand{\cells}{%
+    \xintFor* ##1 in \innersequence \do {%
+        &
+    }%
+}
+\newcommand{\subtask}[2]{\small #1 & #2 \cells}
+
+\def\koma{,}
+\newcommand{\klam}[1]{(#1)}
+\def\lklam{(}
+\def\rklam{)}
+\def\elklam{[}
+\def\erklam{]}
 
 %%%%%%%%%%%%%%%
 % Input files %
@@ -140,7 +151,7 @@
 % http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
 % https://en.wikibooks.org/wiki/LaTeX/Counters
 \newcommand{\printheader}[1]{%
-    \pgfmathparse{int(#1 - 4)}%
+    \pgfmathparse{int(#1 - \columns)}%
     \setcounter{iterA}{0}%
 
     \xintifEq{\pdflanguage}{\english}%
@@ -149,13 +160,16 @@
     } {%
         \textbf{Aufgabe} & \textbf{Pkt}
     }
-    % Add names
+    % Add names by iterating all groups and use the participant-id to
+    % get the names for each participant from the participant-database
     \DTLforeach*{groups} % database label
-    {\date=date,\participants=participants} % assignment
+    {\participants=participants} % assignment
     {%
+        % Check if the iteration variable is smaller than #1 (upperbound)
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
-            \xintifCmp{\value{iterA}}{#1-5}{}{}%
+            % Check if the iteration variable is above #1 - 5 (lowerbound)
+            \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
             {%
                 &
                 % \xDTLassignfirstmatch{participants}{\personid}{##1}{\name=\firstname,\points=\lastname}
@@ -189,13 +203,16 @@
     } {%
         \textbf{Studienfach} &
     }
-    % Add field of study
-    \DTLforeach*{groups} % database label
-    {\date=date,\participants=participants} % assignment
+    % Add field of study by iterating all groups and use the participant-id to
+    % get the studyfield for each participant from the participant-database
+    \DTLforeach*{groups}%
+    {\participants=participants}%
     {%
+        % Check if the iteration variable is smaller than #1 (upperbound)
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
-            \xintifCmp{\value{iterA}}{#1-5}{}{}%
+            % Check if the iteration variable is above #1 - 5 (lowerbound)
+            \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
             {%
                 % TODO does not work if the studyfield is empty
                 &
@@ -221,13 +238,15 @@
     } {%
         \textbf{Tag \& Uhrzeit} &
     }
-    % Add dates
-    \DTLforeach*{groups} % database label
-    {\date=date,\participants=participants} % assignment
+    % Add dates by iterating all groups and access their day and time
+    \DTLforeach*{groups}%
+    {\date=date}%
     {%
+        % Check if the iteration variable is smaller than #1 (upperbound)
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
-            \xintifCmp{\value{iterA}}{#1-5}{}{}%
+            % Check if the iteration variable is above #1 - 5 (lowerbound)
+            \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
             {%
                 & \date{}%
             }%
@@ -255,7 +274,7 @@
 
 \begin{document}
     \newcounter{allcol}
-    \setcounter{allcol}{3}
+    \setcounter{allcol}{\columnsMO}
 
     \DTLforeach*{groups} % database label
     {}
@@ -264,20 +283,20 @@
     }
     %\addtocounter{nbcol}{-1}
 
+    % Variable to identify the table currently processed
     \newcounter{tablenumber}
     \newcounter{max}
-    \setcounter{max}{\value{allcol}/4}
-    \newcounter{sth}
+    \setcounter{max}{\value{allcol}/\columns}
+    \newcounter{upperbound}
 
+    % Iterate all tables
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
 
-        \pgfmathparse{int((\value{tablenumber}+1)*4)}
-        \setcounter{sth}{\pgfmathresult}
-        % \pgfmathsetmacro{\sth}{int((\value{tablenumber}+1)*4)}
+        \pgfmathparse{int((\value{tablenumber}+1)*\columns)}
+        \setcounter{upperbound}{\pgfmathresult}
 
-        \begin{tabularx}{\textwidth}{ X"r"X*{3}{|X} }
-            %\pgfmathresult
-            \printheader{\arabic{sth}}
+        \begin{tabularx}{\textwidth}{ X"r"X*{\columnsMO}{|X} }
+            \printheader{\arabic{upperbound}}
 
             \xintForthree #1#2#3 in \taskdata \do
             {
