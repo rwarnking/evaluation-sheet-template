@@ -1,0 +1,60 @@
+let title = "";
+let firstname = "First";
+let lastname = "Lastname";
+let title2 = "";
+let nutzername = "";
+let privatadr = "";
+let privatnr = "";
+let email = "@email.de";
+let anmeldedatum = "";
+let studiengang = "Titel,Bachelor of Science,3";
+let id = 111111;
+let bemerkung = "";
+
+let num = 100;
+
+let con = ";";
+
+let participants = [];
+
+for (var i = 0; i < 150; i++) {
+
+	id = Math.floor(Math.random() * 899999) + 100000;
+  let anrede = Math.random() > 0.5 ? "Herr" : "Frau"
+
+  let studiengang = "Titel," +
+  	Math.random() > 0.5 ? "Bachelor of Science" : "Master of Science" +
+    "," + (Math.floor(Math.random() * 10) + 1);
+
+  var s = "00" + i;
+  s = s.substr(s.length - 3);
+  let f = firstname + s;
+  let l = lastname + s;
+  let mail = l + email;
+
+	participants.push(
+    [
+      anrede,
+      title,
+      f,
+      l,
+      title2,
+      nutzername,
+      privatadr,
+      privatnr,
+      mail,
+      anmeldedatum,
+      studiengang,
+      id,
+      bemerkung
+    ]
+	);
+}
+
+participants.sort(function(a, b) {
+  return a[11] - b[11];
+});
+
+for (var i = 0; i < participants.length; i++) {
+	console.log(participants[i]);
+}
