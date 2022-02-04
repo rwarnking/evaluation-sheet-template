@@ -106,7 +106,15 @@
         &
     }%
 }
-\newcommand{\subtask}[2]{\small #1 & #2 \cells}
+\newcommand{\cellsA}[2]{%
+    \xintFor* ##1 in {\xintSeq{#2-\columnsMO}{#2}} \do {%
+        & \DTLfetch{points}{groupid}{##1}{#1}
+    }%
+}
+\newcommand{\createtask}[5]{
+    \textbf{#1} #2 & \textbf{#3} \cellsA{#4}{#5} \\ \hline
+}
+\newcommand{\createsubtask}[4]{\small #1 & #2 \cellsA{#3}{#4} \\ \hline}
 
 \def\koma{,}
 \newcommand{\klam}[1]{(#1)}
@@ -118,17 +126,13 @@
 %%%%%%%%%%%%%%%
 % Input files %
 %%%%%%%%%%%%%%%
-\input{\coursename"_"\semester/sheet_\sheetnumber.tex}
 
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
 % TODO groups -> dropped out column
-% TODO sheet_01_points with group rows and number columns
 % TODO Enable / Disable different display rows
-
-\newcommand{\createtask}[3]{
-    \textbf{#1} & \textbf{#2} \cells \\ \hline
-}
+% TODO cant deal with empty columns for the points
+% TODO disable showing points
 
 \newcounter{iter}
 \newcounter{iterA}
@@ -138,8 +142,10 @@
 % Database TODO %
 %%%%%%%%%%%%%%%
 \DTLsetseparator{;}
-\DTLloaddb{participants}{\coursename"_"\semester/participants.csv}
-\DTLloaddb{groups}{\coursename"_"\semester/groups.csv}
+\DTLloaddb{participants}{\semester"_"\coursename/participants.csv}
+\DTLloaddb{groups}{\semester"_"\coursename/groups.csv}
+\DTLloaddb{points}{\semester"_"\coursename/sheet_01_points.csv}
+\DTLloaddb{assignments}{\semester"_"\coursename/sheet_01.csv}
 
 % TODO does not work with ä, ü, ö
 \def\personid{Matrikelnr}
@@ -154,6 +160,7 @@
 % http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
 % https://en.wikibooks.org/wiki/LaTeX/Counters
 \newcommand{\printheader}[1]{%
+    % TODO delete this?
     \pgfmathparse{int(#1 - \columns)}%
     \setcounter{iterA}{0}%
 
@@ -274,6 +281,14 @@
 
 %--------------------------------------------------------------
 
+% Test if text is a number
+% This is used to differentiate between "1" and "1a"
+% https://texfaq.org/FAQ-isitanum
+\def\IsPositive#1{%
+  TT\fi
+  \ifcat_\ifnum0<0#1 _\else A\fi
+}
+
 \begin{document}
     \newcounter{allcol}
     \setcounter{allcol}{\columnsMO}
@@ -300,23 +315,35 @@
         \begin{tabularx}{\textwidth}{ X"r"X*{\columnsMO}{|X} }
             \printheader{\arabic{upperbound}}
 
-            \xintForthree #1#2#3 in \taskdata \do
+            \DTLforeach*{assignments} % database label
+            {\task=taskid, \title=title, \points=points, \text=description}
             {
-                \createtask{#1}{#2}{#3}
-                \xintForpair #4#5 in {#3} \do
-                {
-                    \subtask{#4}{#5} \\ \hline
-                }
-                \thickhline
+                \if\IsPositive{\task}%
+                    \createtask
+                        {\title}
+                        {\text}
+                        {\points}
+                        {\task}
+                        {\arabic{upperbound}}
+                \else
+                    \createsubtask
+                        {\text}
+                        {\points}
+                        {\task}
+                        {\arabic{upperbound}}
+                \fi
+                % TODO create \thickhline at the end of a task
             }
             \sumrow
         \end{tabularx}
+        \clearpage
     }
 
     % Print error when no groups could be found
     \ifthenelse{\equal{\DTLrowcount{groups}}{0}}
     {%
         WARNING: No groups found!.
+        % https://latex.org/forum/viewtopic.php?t=8609
         \PackageError{evaluation-sheet}{The groups.csv does not contain any groups.}{
             Please check your groups.csv if it really contains groups.
         }
