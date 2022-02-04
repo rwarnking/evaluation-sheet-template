@@ -24,6 +24,10 @@
 \usepackage{tikz}
 %\usepackage{csvsimple}
 
+\usepackage{datatool}
+
+\usepackage{trimclip}
+
 \setlength{\parindent}{0pt}
 
 %%%%%%%%%%
@@ -103,12 +107,10 @@
 %%%%%%%%%%%%%%%
 % Input files %
 %%%%%%%%%%%%%%%
-\input{\coursename"_"\semester/persondata.tex}
 \input{\coursename"_"\semester/sheet_\sheetnumber.tex}
 
 % TODO how to handle empty lists with no participants
 % TODO how to mark and process participants that dropped out or changed
-\initpersons
 
 \newcommand{\createtask}[3]{
     \textbf{#1} & \textbf{#2} \cells \\ \hline
@@ -121,15 +123,19 @@
 %%%%%%%%%%%%%%%
 % Database TODO %
 %%%%%%%%%%%%%%%
-\usepackage{datatool}
 \DTLsetseparator{;}
-\DTLloaddb{players}{example-coursename-1_201819/persons.csv}
+\DTLloaddb{participants}{\coursename"_"\semester/participants.csv}
+\DTLloaddb{groups}{\coursename"_"\semester/groups.csv}
 
 % TODO does not work with ä, ü, ö
 \def\personid{Matrikelnr}
 \def\firstname{Vorname}
 \def\lastname{Nachname}
 \def\studyfield{Studiengaenge}
+
+\newcommand\clipstring[2][3cm]{%
+    \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
+}
 
 % http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
 % https://en.wikibooks.org/wiki/LaTeX/Counters
@@ -144,20 +150,27 @@
         \textbf{Aufgabe} & \textbf{Pkt}
     }
     % Add names
-    \xintForthree ##1##2##3 in \persondata \do
+    \DTLforeach*{groups} % database label
+    {\date=date,\participants=participants} % assignment
     {%
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
-                &%
-                % \xDTLassignfirstmatch{players}{\personid}{##1}{\name=\firstname,\points=\lastname}
+                &
+                % \xDTLassignfirstmatch{participants}{\personid}{##1}{\name=\firstname,\points=\lastname}
                 % \name \points,\newline%
-                % a b
-                \DTLfetch{players}{\personid}{##1}{\firstname}
-                \DTLfetch{players}{\personid}{##1}{\lastname},\newline%
-                \DTLfetch{players}{\personid}{##2}{\firstname}
-                \DTLfetch{players}{\personid}{##2}{\lastname}%
+                % https://tex.stackexchange.com/questions/203277/truncate-text-from-left-to-right
+                \foreach \n [count=\ni] in \participants {%
+                    \ifnum\ni=1%
+                    \else%
+                        \newline
+                    \fi%
+                    \clipstring[\linewidth]{%
+                        \DTLfetch{participants}{\personid}{\n}{\firstname}
+                        \DTLfetch{participants}{\personid}{\n}{\lastname}%
+                    }
+                }%
             }%
         }%
         %#1 \arabic{iterA}
@@ -177,19 +190,24 @@
         \textbf{Studienfach} &
     }
     % Add field of study
-    \xintForthree ##1##2##3 in \persondata \do
+    \DTLforeach*{groups} % database label
+    {\date=date,\participants=participants} % assignment
     {%
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
-            %\DTLfetch{players}{\personid}{##1}{semester}
                 % TODO does not work if the studyfield is empty
-                & \DTLfetch{players}{\personid}{##1}{\studyfield}\newline%
-                \DTLfetch{players}{\personid}{##2}{\studyfield}
-                % & a \newline b
-                %\DTLfetch{players}{\personid}{##2}{semester}
-                % ##3%
+                &
+                \foreach \n [count=\ni] in \participants {%
+                    \ifnum\ni=1%
+                    \else%
+                        \newline
+                    \fi%
+                    \clipstring[\linewidth]{%
+                        \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+                    }
+                }%
             }%
         }%
         \addtocounter{iterA}{1}%
@@ -204,13 +222,14 @@
         \textbf{Tag \& Uhrzeit} &
     }
     % Add dates
-    \xintForthree ##1##2##3 in \persondata \do
+    \DTLforeach*{groups} % database label
+    {\date=date,\participants=participants} % assignment
     {%
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
-                & ##3%
+                & \date{}%
             }%
         }%
         \addtocounter{iterA}{1}%
@@ -235,17 +254,11 @@
 %--------------------------------------------------------------
 
 \begin{document}
-
-    % \DTLforeach*{players} % database label
-    % {\firstname=firstname,\lastname=lastname} % assignment
-    % {
-    %     \firstname{} \lastname\\
-    % }
-
     \newcounter{allcol}
     \setcounter{allcol}{3}
 
-    \xintForthree #1#2#3 in \persondata \do
+    \DTLforeach*{groups} % database label
+    {}
     {
         \addtocounter{allcol}{1}
     }
