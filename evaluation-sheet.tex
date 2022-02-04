@@ -112,6 +112,19 @@
 \newcounter{iterA}
 % \pgfmathsetmacro\iterA{int(#1+4)}
 
+%%%%%%%%%%%%%%%
+% Database TODO %
+%%%%%%%%%%%%%%%
+\usepackage{datatool}
+\DTLsetseparator{;}
+\DTLloaddb{players}{example-coursename-1_201819/persons.csv}
+
+% TODO does not work with ä, ü, ö
+\def\personid{Matrikelnr}
+\def\firstname{Vorname}
+\def\lastname{Nachname}
+\def\studyfield{Studiengaenge}
+
 % http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
 % https://en.wikibooks.org/wiki/LaTeX/Counters
 \newcommand{\printheader}[1]{%
@@ -125,13 +138,17 @@
         \textbf{Aufgabe} & \textbf{Pkt}
     }
     % Add names
-    \xintForfour ##1##2##3##4 in \persondata \do
+    \xintForthree ##1##2##3 in \persondata \do
     {%
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
-                & ##1,\newline ##2%
+                &%
+                \DTLfetch{players}{\personid}{##1}{\firstname}
+                \DTLfetch{players}{\personid}{##1}{\lastname},\newline%
+                \DTLfetch{players}{\personid}{##2}{\firstname}
+                \DTLfetch{players}{\personid}{##2}{\lastname}%
             }%
         }%
         %#1 \arabic{iterA}
@@ -151,13 +168,18 @@
         \textbf{Studienfach} &
     }
     % Add field of study
-    \xintForfour ##1##2##3##4 in \persondata \do
+    \xintForthree ##1##2##3 in \persondata \do
     {%
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
-                & ##3%
+            %\DTLfetch{players}{\personid}{##1}{semester}
+                % TODO does not work if the studyfield is empty
+                & \DTLfetch{players}{\personid}{##1}{\studyfield}\newline%
+                \DTLfetch{players}{\personid}{##2}{\studyfield}
+                %\DTLfetch{players}{\personid}{##2}{semester}
+                % ##3%
             }%
         }%
         \addtocounter{iterA}{1}%
@@ -172,13 +194,13 @@
         \textbf{Tag \& Uhrzeit} &
     }
     % Add dates
-    \xintForfour ##1##2##3##4 in \persondata \do
+    \xintForthree ##1##2##3 in \persondata \do
     {%
         \xintifCmp{#1}{\value{iterA}}{}{}%
         {%
             \xintifCmp{\value{iterA}}{#1-5}{}{}%
             {%
-                & ##4%
+                & ##3%
             }%
         }%
         \addtocounter{iterA}{1}%
@@ -204,10 +226,16 @@
 
 \begin{document}
 
+    % \DTLforeach*{players} % database label
+    % {\firstname=firstname,\lastname=lastname} % assignment
+    % {
+    %     \firstname{} \lastname\\
+    % }
+
     \newcounter{allcol}
     \setcounter{allcol}{3}
 
-    \xintForfour #1#2#3#4 in \persondata \do
+    \xintForthree #1#2#3 in \persondata \do
     {
         \addtocounter{allcol}{1}
     }

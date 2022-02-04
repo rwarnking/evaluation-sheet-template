@@ -1,0 +1,9 @@
+Anrede;Titel;Vorname;Nachname;Titel2;Nutzernamen;Privatadr;Privatnr;E-Mail;Anmeldedatum;Studiengaenge;Matrikelnr;Bemerkung
+"Herr";"";"First01";"Lastname01";"";"fLastname01";"";"";"fLastname01@email.de";"";"Titel,Bachelor of Science,3";"111111";""
+"Frau";"";"First02";"Lastname02";"";"fLastname02";"";"";"fLastname02@email.de";"";"Titel,Master of Science,1";"123456";""
+"Herr";"";"First03";"Lastname03";"";"fLastname03";"";"";"fLastname03@email.de";"";"Titel,Bachelor of Science,2";"345345";""
+"Herr";"";"First04";"Lastname04";"";"fLastname04";"";"";"fLastname04@email.de";"";"Titel,Bachelor of Science,11";"554433";""
+"Herr";"";"First05";"Lastname05";"";"fLastname05";"";"";"fLastname05@email.de";"";"Titel,Bachelor of Science,9";"555111";""
+"Herr";"";"First06";"Lastname06";"";"fLastname06";"";"";"fLastname06@email.de";"";"Titel,Bachelor of Science,5";"676767";""
+"Herr";"";"First07";"Lastname07";"";"fLastname07";"";"";"fLastname07@email.de";"";"Titel,Bachelor of Science,3";"818283";""
+"Herr";"";"First08";"Lastname08";"";"fLastname08";"";"";"fLastname08@email.de";"";"Titel,Bachelor of Science,4";"999999";""
