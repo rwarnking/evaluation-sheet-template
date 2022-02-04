@@ -120,8 +120,11 @@
 %%%%%%%%%%%%%%%
 \input{\coursename"_"\semester/sheet_\sheetnumber.tex}
 
-% TODO how to handle empty lists with no participants
+% TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
+% TODO groups -> dropped out column
+% TODO sheet_01_points with group rows and number columns
+% TODO Enable / Disable different display rows
 
 \newcommand{\createtask}[3]{
     \textbf{#1} & \textbf{#2} \cells \\ \hline
@@ -214,7 +217,6 @@
             % Check if the iteration variable is above #1 - 5 (lowerbound)
             \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
             {%
-                % TODO does not work if the studyfield is empty
                 &
                 \foreach \n [count=\ni] in \participants {%
                     \ifnum\ni=1%
@@ -310,5 +312,14 @@
             \sumrow
         \end{tabularx}
     }
+
+    % Print error when no groups could be found
+    \ifthenelse{\equal{\DTLrowcount{groups}}{0}}
+    {%
+        WARNING: No groups found!.
+        \PackageError{evaluation-sheet}{The groups.csv does not contain any groups.}{
+            Please check your groups.csv if it really contains groups.
+        }
+    }{}
 
 \end{document}
