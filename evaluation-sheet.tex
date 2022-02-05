@@ -83,10 +83,35 @@
 % Select a language
 \def\pdflanguage{\english}
 
+% Enable or disable different rows of information
+\newcommand{\disable}{0}
+\newcommand{\enable}{1}
+\newcommand{\showname}{\enable}
+\newcommand{\showstudy}{\enable}
+\newcommand{\showdate}{\enable}
+% Enable or disable showing points
+\newcommand{\showpoints}{\enable}
+
 % TODO automate
 \newcommand{\columns}{4}
 \newcommand{\columnsMO}{3}
 \newcommand{\columnsPO}{5}
+
+%%%%%%%%%%%%%%%
+% Database TODO %
+%%%%%%%%%%%%%%%
+\DTLsetseparator{;}
+\DTLloaddb{participants}{\semester"_"\coursename/participants.csv}
+\DTLloaddb{groups}{\semester"_"\coursename/groups.csv}
+\DTLloaddb{points}{\semester"_"\coursename/sheet_\sheetnumber_points.csv}
+\DTLloaddb{assignments}{\semester"_"\coursename/sheet_\sheetnumber.csv}
+
+% TODO does not work with ä, ü, ö
+\def\personid{Matrikelnr}
+\def\firstname{Vorname}
+\def\lastname{Nachname}
+\def\studyfield{Studiengaenge}
+\def\droppedout{droppedout}
 
 %%%%%%%%%%%%
 % Commands %
@@ -101,20 +126,64 @@
 \makeatother
 
 \edef\innersequence {\xintSeq{1}{\columns}}%
-\newcommand{\cells}{%
+\newcommand{\sumcells}{%
     \xintFor* ##1 in \innersequence \do {%
         &
+        \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
+        \DTLgetvalue{\tmpcmd}%
+        {groups}%
+        {##1}%
+        {\columnidx}%
+
+        \xintifCmp{\sheetnumber}{\tmpcmd}
+        {
+            \cellcolor{black!25}
+        }{
+            \cellcolor{black!25}
+        }{
+            % \xintifEq{\showpoints}{\enable}%
+            % {%
+            %     \DTLfetch{points}{groupid}{##1}{#1}
+            % }{}
+        }
     }%
 }
-\newcommand{\cellsA}[2]{%
+
+\newcommand{\cells}[2]{%
     \xintFor* ##1 in {\xintSeq{#2-\columnsMO}{#2}} \do {%
-        & \DTLfetch{points}{groupid}{##1}{#1}
+        &
+        % DTLifnullorempty
+        % \DTLifnull{\DTLfetch{groups}{groupid}{##1}{\droppedout}}
+        % {true part}
+        % {false part}
+
+        \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
+        \DTLgetvalue{\tmpcmd}%
+        {groups}%
+        {##1}%
+        {\columnidx}%
+
+        % \DTLifstring{\DTLfetch{groups}{groupid}{##1}{\droppedout}}
+        % {〈string true〉}
+        % {false \DTLfetch{groups}{groupid}{##1}{\droppedout}}
+
+        \xintifCmp{\sheetnumber}{\tmpcmd}
+        {
+            \cellcolor{black!25}
+        }{
+            \cellcolor{black!25}
+        }{
+            \xintifEq{\showpoints}{\enable}%
+            {%
+                \DTLfetch{points}{groupid}{##1}{#1}
+            }{}
+        }
     }%
 }
 \newcommand{\createtask}[5]{
-    \textbf{#1} #2 & \textbf{#3} \cellsA{#4}{#5} \\ \hline
+    \textbf{#1} #2 & \textbf{#3} \cells{#4}{#5} \\ \hline
 }
-\newcommand{\createsubtask}[4]{\small #1 & #2 \cellsA{#3}{#4} \\ \hline}
+\newcommand{\createsubtask}[4]{\small #1 & #2 \cells{#3}{#4} \\ \hline}
 
 \def\koma{,}
 \newcommand{\klam}[1]{(#1)}
@@ -129,29 +198,11 @@
 
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
-% TODO groups -> dropped out column
-% TODO Enable / Disable different display rows
 % TODO cant deal with empty columns for the points
-% TODO disable showing points
 
 \newcounter{iter}
 \newcounter{iterA}
 % \pgfmathsetmacro\iterA{int(#1+4)}
-
-%%%%%%%%%%%%%%%
-% Database TODO %
-%%%%%%%%%%%%%%%
-\DTLsetseparator{;}
-\DTLloaddb{participants}{\semester"_"\coursename/participants.csv}
-\DTLloaddb{groups}{\semester"_"\coursename/groups.csv}
-\DTLloaddb{points}{\semester"_"\coursename/sheet_01_points.csv}
-\DTLloaddb{assignments}{\semester"_"\coursename/sheet_01.csv}
-
-% TODO does not work with ä, ü, ö
-\def\personid{Matrikelnr}
-\def\firstname{Vorname}
-\def\lastname{Nachname}
-\def\studyfield{Studiengaenge}
 
 \newcommand\clipstring[2][3cm]{%
     \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
@@ -164,113 +215,122 @@
     \pgfmathparse{int(#1 - \columns)}%
     \setcounter{iterA}{0}%
 
-    \xintifEq{\pdflanguage}{\english}%
+    \ifthenelse{\equal{\showname}{\enable}}
     {%
-        \textbf{Assignment} & \textbf{Pts}
-    } {%
-        \textbf{Aufgabe} & \textbf{Pkt}
-    }
-    % Add names by iterating all groups and use the participant-id to
-    % get the names for each participant from the participant-database
-    \DTLforeach*{groups} % database label
-    {\participants=participants} % assignment
-    {%
-        % Check if the iteration variable is smaller than #1 (upperbound)
-        \xintifCmp{#1}{\value{iterA}}{}{}%
+        \xintifEq{\pdflanguage}{\english}%
         {%
-            % Check if the iteration variable is above #1 - 5 (lowerbound)
-            \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+            \textbf{Assignment} & \textbf{Pts}
+        } {%
+            \textbf{Aufgabe} & \textbf{Pkt}
+        }
+        % Add names by iterating all groups and use the participant-id to
+        % get the names for each participant from the participant-database
+        \DTLforeach*{groups} % database label
+        {\participants=participants} % assignment
+        {%
+            % Check if the iteration variable is smaller than #1 (upperbound)
+            \xintifCmp{#1}{\value{iterA}}{}{}%
             {%
-                &
-                % \xDTLassignfirstmatch{participants}{\personid}{##1}{\name=\firstname,\points=\lastname}
-                % \name \points,\newline%
-                % https://tex.stackexchange.com/questions/203277/truncate-text-from-left-to-right
-                \foreach \n [count=\ni] in \participants {%
-                    \ifnum\ni=1%
-                    \else%
-                        \newline
-                    \fi%
-                    \clipstring[\linewidth]{%
-                        \DTLfetch{participants}{\personid}{\n}{\firstname}
-                        \DTLfetch{participants}{\personid}{\n}{\lastname}%
-                    }
+                % Check if the iteration variable is above #1 - 5 (lowerbound)
+                \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+                {%
+                    &
+                    % \xDTLassignfirstmatch{participants}{\personid}{##1}{\name=\firstname,\points=\lastname}
+                    % \name \points,\newline%
+                    % https://tex.stackexchange.com/questions/203277/truncate-text-from-left-to-right
+                    \foreach \n [count=\ni] in \participants {%
+                        \ifnum\ni=1%
+                        \else%
+                            \newline
+                        \fi%
+                        \clipstring[\linewidth]{%
+                            \DTLfetch{participants}{\personid}{\n}{\firstname}
+                            \DTLfetch{participants}{\personid}{\n}{\lastname}%
+                        }
+                    }%
                 }%
             }%
+            %#1 \arabic{iterA}
+            %\ifnum #1>\value{iterA}%
+                %& ##1,\newline ##2 #1 \arabic{iterA}%
+            %\fi%
+            \addtocounter{iterA}{1}%
         }%
-        %#1 \arabic{iterA}
-        %\ifnum #1>\value{iterA}%
-            %& ##1,\newline ##2 #1 \arabic{iterA}%
-        %\fi%
-        \addtocounter{iterA}{1}%
-    }%
-    % TODO add missing "and"s
-    \\ \hline
+        % TODO add missing "and"s
+        \\ \hline
+    }{}
 
-    \setcounter{iterA}{0}
-    \xintifEq{\pdflanguage}{\english}%
+    \ifthenelse{\equal{\showstudy}{\enable}}
     {%
-        \textbf{Field of study} &
-    } {%
-        \textbf{Studienfach} &
-    }
-    % Add field of study by iterating all groups and use the participant-id to
-    % get the studyfield for each participant from the participant-database
-    \DTLforeach*{groups}%
-    {\participants=participants}%
-    {%
-        % Check if the iteration variable is smaller than #1 (upperbound)
-        \xintifCmp{#1}{\value{iterA}}{}{}%
+        \setcounter{iterA}{0}
+        \xintifEq{\pdflanguage}{\english}%
         {%
-            % Check if the iteration variable is above #1 - 5 (lowerbound)
-            \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+            \textbf{Field of study} &
+        } {%
+            \textbf{Studienfach} &
+        }
+        % Add field of study by iterating all groups and use the participant-id to
+        % get the studyfield for each participant from the participant-database
+        \DTLforeach*{groups}%
+        {\participants=participants}%
+        {%
+            % Check if the iteration variable is smaller than #1 (upperbound)
+            \xintifCmp{#1}{\value{iterA}}{}{}%
             {%
-                &
-                \foreach \n [count=\ni] in \participants {%
-                    \ifnum\ni=1%
-                    \else%
-                        \newline
-                    \fi%
-                    \clipstring[\linewidth]{%
-                        \DTLfetch{participants}{\personid}{\n}{\studyfield}%
-                    }
+                % Check if the iteration variable is above #1 - 5 (lowerbound)
+                \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+                {%
+                    &
+                    \foreach \n [count=\ni] in \participants {%
+                        \ifnum\ni=1%
+                        \else%
+                            \newline
+                        \fi%
+                        \clipstring[\linewidth]{%
+                            \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+                        }
+                    }%
                 }%
             }%
+            \addtocounter{iterA}{1}%
         }%
-        \addtocounter{iterA}{1}%
-    }%
-    \\ \hline
+        \\ \hline
+    }{}
 
-    \setcounter{iterA}{0}
-    \xintifEq{\pdflanguage}{\english}%
+    \ifthenelse{\equal{\showdate}{\enable}}
     {%
-        \textbf{Day \& Time} &
-    } {%
-        \textbf{Tag \& Uhrzeit} &
-    }
-    % Add dates by iterating all groups and access their day and time
-    \DTLforeach*{groups}%
-    {\date=date}%
-    {%
-        % Check if the iteration variable is smaller than #1 (upperbound)
-        \xintifCmp{#1}{\value{iterA}}{}{}%
+        \setcounter{iterA}{0}
+        \xintifEq{\pdflanguage}{\english}%
         {%
-            % Check if the iteration variable is above #1 - 5 (lowerbound)
-            \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+            \textbf{Day \& Time} &
+        } {%
+            \textbf{Tag \& Uhrzeit} &
+        }
+        % Add dates by iterating all groups and access their day and time
+        \DTLforeach*{groups}%
+        {\date=date}%
+        {%
+            % Check if the iteration variable is smaller than #1 (upperbound)
+            \xintifCmp{#1}{\value{iterA}}{}{}%
             {%
-                & \date{}%
+                % Check if the iteration variable is above #1 - 5 (lowerbound)
+                \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+                {%
+                    & \date{}%
+                }%
             }%
+            \addtocounter{iterA}{1}%
         }%
-        \addtocounter{iterA}{1}%
-    }%
-    \\ \thickhline
+        \\ \thickhline
+    }{}
 }
 
 \newcommand{\sumrow}{%
     \xintifEq{\pdflanguage}{\english}%
     {%
-        \textbf{Sum:} & \cells \\%
+        \textbf{Sum:} & \sumcells \\%
     } {%
-        \textbf{Summe:} & \cells \\%
+        \textbf{Summe:} & \sumcells \\%
     }%
 }
 
