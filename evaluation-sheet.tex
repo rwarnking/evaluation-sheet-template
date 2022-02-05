@@ -125,30 +125,63 @@
 \newcolumntype{"}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
 \makeatother
 
-\edef\innersequence {\xintSeq{1}{\columns}}%
-\newcommand{\sumcells}{%
-    \xintFor* ##1 in \innersequence \do {%
+% Counter for the pointsum
+\newcounter{pointsum}
+% Add the cells to the sum row
+% Also add point information if enabled by summing the task points
+% @param the max group index
+\newcommand{\sumcells}[1]{%
+    % ##1 is the groupindex
+    \xintFor* ##1 in {\xintSeq{#1-\columnsMO}{#1}} \do {%
         &
+        % Get the information about the group if they are still in business
         \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
-        \DTLgetvalue{\tmpcmd}%
+        \DTLgetvalue{\lastsheet}%
         {groups}%
         {##1}%
         {\columnidx}%
 
-        \xintifCmp{\sheetnumber}{\tmpcmd}
+        % Mark columns of groups that already dropped out
+        \xintifCmp{\sheetnumber}{\lastsheet}
         {
             \cellcolor{black!25}
         }{
             \cellcolor{black!25}
         }{
-            % \xintifEq{\showpoints}{\enable}%
-            % {%
-            %     \DTLfetch{points}{groupid}{##1}{#1}
-            % }{}
+            % Do not print if points should not be shown
+            \xintifEq{\showpoints}{\enable}%
+            {%
+                % Reset point sum
+                \setcounter{pointsum}{0}
+                % Sum points of all assignments (no subtasks)
+                % By iterating over the row of the current group
+                % This loop iterates all tasks
+                \DTLforeach*{assignments} % database label
+                {\task=taskid}
+                {
+                    % Get the columnindex for this task
+                    \DTLgetcolumnindex{\columnidx}{points}{\task}
+                    \DTLgetvalue{\taskpoints}%
+                    {points}%
+                    {##1}% groupindex
+                    {\columnidx}%
+                    % Do not sum points of subtask only full assignments
+                    \if\IsPositive{\task}%
+                        \addtocounter{pointsum}{\taskpoints}
+                    \else
+                    \fi
+                }
+                % Output point sum
+                \arabic{pointsum}
+            }{}
         }
     }%
 }
 
+% Add the cells to the task rows
+% Also add point information for each task if enabled
+% @param the task index (row)
+% @param the max group index
 \newcommand{\cells}[2]{%
     \xintFor* ##1 in {\xintSeq{#2-\columnsMO}{#2}} \do {%
         &
@@ -325,12 +358,12 @@
     }{}
 }
 
-\newcommand{\sumrow}{%
+\newcommand{\sumrow}[1]{%
     \xintifEq{\pdflanguage}{\english}%
     {%
-        \textbf{Sum:} & \sumcells \\%
+        \textbf{Sum:} & \sumcells{#1} \\%
     } {%
-        \textbf{Summe:} & \sumcells \\%
+        \textbf{Summe:} & \sumcells{#1} \\%
     }%
 }
 
@@ -394,7 +427,7 @@
                 \fi
                 % TODO create \thickhline at the end of a task
             }
-            \sumrow
+            \sumrow{\arabic{upperbound}}
         \end{tabularx}
         \clearpage
     }
