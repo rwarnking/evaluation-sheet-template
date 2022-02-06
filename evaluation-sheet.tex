@@ -324,9 +324,7 @@
 %%%%%%%%%%%%%%%%
 % Print Header %
 %%%%%%%%%%%%%%%%
-\newcounter{iter}
-\newcounter{iterA}
-% \pgfmathsetmacro\iterA{int(#1+4)}
+\newcounter{itergroups}
 
 \newcommand\clipstring[2][3cm]{%
     \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
@@ -335,9 +333,7 @@
 % http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
 % https://en.wikibooks.org/wiki/LaTeX/Counters
 \newcommand{\printheader}[1]{%
-    % TODO delete this?
-    \pgfmathparse{int(#1 - \columns)}%
-    \setcounter{iterA}{0}%
+    \setcounter{itergroups}{0}%
 
     \ifthenelse{\equal{\showname}{\enable}}
     {%
@@ -353,15 +349,12 @@
         {\participants=participants} % assignment
         {%
             % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{iterA}}{}{}%
+            \xintifCmp{#1}{\value{itergroups}}{}{}%
             {%
                 % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
                 {%
                     &
-                    % \xDTLassignfirstmatch{participants}{\personid}{##1}{\name=\firstname,\points=\lastname}
-                    % \name \points,\newline%
-                    % https://tex.stackexchange.com/questions/203277/truncate-text-from-left-to-right
                     \foreach \n [count=\ni] in \participants {%
                         \ifnum\ni=1%
                         \else%
@@ -374,14 +367,10 @@
                     }%
                 }%
             }%
-            %#1 \arabic{iterA}
-            %\ifnum #1>\value{iterA}%
-                %& ##1,\newline ##2 #1 \arabic{iterA}%
-            %\fi%
-            \addtocounter{iterA}{1}%
+            \addtocounter{itergroups}{1}%
         }%
         % Add missing "and"s
-        \forloop{iterA}{\value{iterA} + 1}{\value{iterA} < #1}{
+        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
             &
         }
         \\ \hline
@@ -389,7 +378,7 @@
 
     \ifthenelse{\equal{\showstudy}{\enable}}
     {%
-        \setcounter{iterA}{0}
+        \setcounter{itergroups}{0}
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Field of study} &
@@ -402,10 +391,10 @@
         {\participants=participants}%
         {%
             % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{iterA}}{}{}%
+            \xintifCmp{#1}{\value{itergroups}}{}{}%
             {%
                 % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
                 {%
                     &
                     \foreach \n [count=\ni] in \participants {%
@@ -419,10 +408,10 @@
                     }%
                 }%
             }%
-            \addtocounter{iterA}{1}%
+            \addtocounter{itergroups}{1}%
         }%
         % Add missing "and"s
-        \forloop{iterA}{\value{iterA} + 1}{\value{iterA} < #1}{
+        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
             &
         }
         \\ \hline
@@ -430,7 +419,7 @@
 
     \ifthenelse{\equal{\showdate}{\enable}}
     {%
-        \setcounter{iterA}{0}
+        \setcounter{itergroups}{0}
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Day \& Time} &
@@ -442,18 +431,18 @@
         {\date=date}%
         {%
             % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{iterA}}{}{}%
+            \xintifCmp{#1}{\value{itergroups}}{}{}%
             {%
                 % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{iterA}}{#1-\columnsPO}{}{}%
+                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
                 {%
                     & \date{}%
                 }%
             }%
-            \addtocounter{iterA}{1}%
+            \addtocounter{itergroups}{1}%
         }%
         % Add missing "and"s
-        \forloop{iterA}{\value{iterA} + 1}{\value{iterA} < #1}{
+        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
             &
         }
         \\ \thickhline
@@ -503,7 +492,6 @@
     {
         \addtocounter{allcol}{1}
     }
-    %\addtocounter{nbcol}{-1}
 
     % Variable to identify the table currently processed
     \newcounter{tablenumber}
