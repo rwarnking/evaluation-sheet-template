@@ -108,7 +108,6 @@
 %%%%%%%%%%%%
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
-% TODO have groupids with gaps -> use the number of rows as index and not the groupidx
 % TODO if no groups are present still print the assignments column
 
 \DTLsetseparator{;}
@@ -266,7 +265,15 @@
                 % If enabled show points
                 \xintifEq{\showpoints}{\enable}%
                 {%
-                    \DTLfetch{points}{groupid}{##1}{#1}
+                    % Get the column in which the groupids are
+                    \DTLgetcolumnindex{\columnidx}{groups}{groupid}
+                    % Get the group identifier instead of the row number
+                    \DTLgetvalue{\curgroupid}%
+                    {groups}%
+                    {##1}% groupindex
+                    {\columnidx}%
+                    % Get point value of this group for the given task
+                    \DTLfetch{points}{groupid}{\curgroupid}{#1}
                 }{}
             }{
                 % If the group info receives a number other than 0
@@ -276,7 +283,15 @@
                     % If enabled show points
                     \xintifEq{\showpoints}{\enable}%
                     {%
-                        \DTLfetch{points}{groupid}{##1}{#1}
+                        % Get the column in which the groupids are
+                        \DTLgetcolumnindex{\columnidx}{groups}{groupid}
+                        % Get the group identifier instead of the row number
+                        \DTLgetvalue{\curgroupid}%
+                        {groups}%
+                        {##1}% groupindex
+                        {\columnidx}%
+                        % Get point value of this group for the given task
+                        \DTLfetch{points}{groupid}{\curgroupid}{#1}
                     }{}
                 }{
                     \cellcolor{disabled}
