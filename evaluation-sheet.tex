@@ -1,12 +1,5 @@
 \documentclass{article}
 
-% TODO remove
-\RequirePackage{l3benchmark}
-\ExplSyntaxOn
-\AtEndDocument { \benchmark_toc: }
-\benchmark_tic:
-\ExplSyntaxOff
-
 %%%%%%%%%%%%
 % Packages %
 %%%%%%%%%%%%
@@ -14,53 +7,29 @@
 \usepackage[margin=0.5cm]{geometry}
 \usepackage{array, tabularx}
 \usepackage[dvipsnames, table]{xcolor}
-\usepackage{listings}
-%\usepackage{tcolorbox}
-\usepackage{enumitem}
-\usepackage{pgffor}
+
+% For \xintFor and similar
 \usepackage{xinttools}
+% For \xintifCmp and similar
 \usepackage{xintfrac}
+% For \forloop
 \usepackage{forloop}
+%
 \usepackage{calc}
+% For \pgfmathresult
 \usepackage{tikz}
-%\usepackage{csvsimple}
 
+% For loading the .csv files as database
 \usepackage{datatool}
-
+% Clip the informations to fit inside the table cells
 \usepackage{trimclip}
 
-\setlength{\parindent}{0pt}
+% Optional
+% Used to reduce distance between items in itemize (\setlist)
+\usepackage{enumitem}
+% Used for displaying code inside the assignments (used for \lstset)
+\usepackage{listings}
 
-%%%%%%%%%%
-% Colors %
-%%%%%%%%%%
-\definecolor{javared}{rgb}{0.6,0,0} % for strings
-\definecolor{javagreen}{rgb}{0.25,0.5,0.35} % comments
-\definecolor{javapurple}{rgb}{0.5,0,0.35} % keywords
-\definecolor{javadocblue}{rgb}{0.25,0.35,0.75} % javadoc
-\lstset{
-    language=Java,
-    basicstyle=\ttfamily,
-    keywordstyle=\color{javapurple}\bfseries,
-    stringstyle=\color{javared},
-    commentstyle=\color{javagreen},
-    morecomment=[s][\color{javadocblue}]{/**}{*/},
-    numbers=left,
-    numberstyle=\tiny\color{black},
-    stepnumber=2,
-    numbersep=10pt,
-    tabsize=4,
-    showspaces=false,
-    showstringspaces=false,
-    %morekeywords={}
-}
-
-% Color for cells that should be disabled
-\colorlet{disabled}{black!25}
-% Color for sumcells with high percentage
-\colorlet{exceptional}{green!25}
-% Color for sumcells with low percentage
-\colorlet{underperformed}{red!25}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -106,16 +75,6 @@
 %%%%%%%%%%%%
 % Database %
 %%%%%%%%%%%%
-% Print error when no groups could be found
-% \ifthenelse{\equal{\DTLrowcount{groups}}{0}}
-% {%
-
-    % https://latex.org/forum/viewtopic.php?t=8609
-    % \PackageError{evaluation-sheet}{The groups.csv does not contain any groups.}{
-    %     Please check your groups.csv if it really contains groups.
-    % }
-% }{}
-
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
 
@@ -134,16 +93,50 @@
 
 \def\pointsKey{points}
 
+%%%%%%%%%%
+% Colors %
+%%%%%%%%%%
+\definecolor{javared}{rgb}{0.6,0,0} % for strings
+\definecolor{javagreen}{rgb}{0.25,0.5,0.35} % comments
+\definecolor{javapurple}{rgb}{0.5,0,0.35} % keywords
+\definecolor{javadocblue}{rgb}{0.25,0.35,0.75} % javadoc
+\lstset{
+    language=Java,
+    basicstyle=\ttfamily,
+    keywordstyle=\color{javapurple}\bfseries,
+    stringstyle=\color{javared},
+    commentstyle=\color{javagreen},
+    morecomment=[s][\color{javadocblue}]{/**}{*/},
+    numbers=left,
+    numberstyle=\tiny\color{black},
+    stepnumber=2,
+    numbersep=10pt,
+    tabsize=4,
+    showspaces=false,
+    showstringspaces=false,
+    %morekeywords={}
+}
+
+% Color for cells that should be disabled
+\colorlet{disabled}{black!25}
+% Color for sumcells with high percentage
+\colorlet{exceptional}{green!25}
+% Color for sumcells with low percentage
+\colorlet{underperformed}{red!25}
+
 %%%%%%%%%%%%
 % Commands %
 %%%%%%%%%%%%
+% Remove extra margin left
+\setlength{\parindent}{0pt}
+
 % Thick Tabular Lines
 \makeatletter
 \newcommand{\thickhline}{%
     \noalign {\ifnum 0=`}\fi \hrule height 1pt
     \futurelet \reserved@a \@xhline
 }
-\newcolumntype{"}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
+\newcolumntype{;}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
 \makeatother
 
 % Test if text is a number
@@ -154,10 +147,176 @@
   \ifcat_\ifnum0<0#1 _\else A\fi
 }
 
-%%%%%%%%%%%%%%%%%%%%%
-% Add cells command %
-%%%%%%%%%%%%%%%%%%%%%
+\newcommand\clipstring[2][3cm]{%
+    \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
+}
 
+\setlength\extrarowheight{2pt}
+\setlist{nosep,after=\vspace*{-\baselineskip}}
+
+\renewcommand{\familydefault}{\sfdefault}
+
+%%%%%%%%%%%%%%%%%%%%%%%%
+% Create task commands %
+%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\createtask}[5]{
+    \textbf{#1} #2 & \textbf{#3} \cells{#4}{#5} \\ \hline
+}
+\newcommand{\createsubtask}[4]{\small #1 & #2 \cells{#3}{#4} \\ \hline}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Print Header
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcounter{itergroups}
+% http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
+% https://en.wikibooks.org/wiki/LaTeX/Counters
+\newcommand{\printheader}[1]{%
+    \setcounter{itergroups}{0}%
+
+    \ifthenelse{\equal{\showname}{\enable}}
+    {%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{Assignment} & \textbf{Pts}
+        } {%
+            \textbf{Aufgabe} & \textbf{Pkt}
+        }
+        % Add names by iterating all groups and use the participant-id to
+        % get the names for each participant from the participant-database
+        \DTLforeach*{groups} % database label
+        {\participants=participants} % assignment
+        {%
+            % Check if the iteration variable is smaller than #1 (upperbound)
+            \xintifCmp{#1}{\value{itergroups}}{}{}%
+            {%
+                % Check if the iteration variable is above #1 - 5 (lowerbound)
+                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
+                {%
+                    &
+                    \foreach \n [count=\ni] in \participants {%
+                        \ifnum\ni=1%
+                        \else%
+                            \newline
+                        \fi%
+                        \clipstring[\linewidth]{%
+                            \DTLfetch{participants}{\personid}{\n}{\firstname}
+                            \DTLfetch{participants}{\personid}{\n}{\lastname}%
+                        }
+                    }%
+                }%
+            }%
+            \addtocounter{itergroups}{1}%
+        }%
+        % Add missing "and"s
+        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
+            &
+        }
+        \\ \hline
+    }{}
+
+    \ifthenelse{\equal{\showstudy}{\enable}}
+    {%
+        \setcounter{itergroups}{0}
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{Field of study} &
+        } {%
+            \textbf{Studienfach} &
+        }
+        % Add field of study by iterating all groups and use the participant-id to
+        % get the studyfield for each participant from the participant-database
+        \DTLforeach*{groups}%
+        {\participants=participants}%
+        {%
+            % Check if the iteration variable is smaller than #1 (upperbound)
+            \xintifCmp{#1}{\value{itergroups}}{}{}%
+            {%
+                % Check if the iteration variable is above #1 - 5 (lowerbound)
+                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
+                {%
+                    &
+                    \foreach \n [count=\ni] in \participants {%
+                        \ifnum\ni=1%
+                        \else%
+                            \newline
+                        \fi%
+                        \clipstring[\linewidth]{%
+                            \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+                        }
+                    }%
+                }%
+            }%
+            \addtocounter{itergroups}{1}%
+        }%
+        % Add missing "and"s
+        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
+            &
+        }
+        \\ \hline
+    }{}
+
+    \ifthenelse{\equal{\showdate}{\enable}}
+    {%
+        \setcounter{itergroups}{0}
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{Day \& Time} &
+        } {%
+            \textbf{Tag \& Uhrzeit} &
+        }
+        % Add dates by iterating all groups and access their day and time
+        \DTLforeach*{groups}%
+        {\date=date}%
+        {%
+            % Check if the iteration variable is smaller than #1 (upperbound)
+            \xintifCmp{#1}{\value{itergroups}}{}{}%
+            {%
+                % Check if the iteration variable is above #1 - 5 (lowerbound)
+                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
+                {%
+                    & \date{}%
+                }%
+            }%
+            \addtocounter{itergroups}{1}%
+        }%
+        % Add missing "and"s
+        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
+            &
+        }
+        \\ \thickhline
+    }{}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Print Sum Row
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Calculate the pointsum for the complete sheet (all full assignments)
+\newcounter{complsum}
+\setcounter{complsum}{0}
+\DTLforeach*{assignments} % database label
+{\task=taskid, \points=points}
+{
+    \if\IsPositive{\task}%
+        \addtocounter{complsum}{\points}
+    \fi
+}
+
+\newcommand{\sumrow}[1]{%
+    \xintifEq{\pdflanguage}{\english}%
+    {%
+        \textbf{Sum:} &
+        \arabic{complsum}
+        \sumcells{#1} \\%
+    } {%
+        \textbf{Summe:} &
+        \arabic{complsum}
+        \sumcells{#1} \\%
+    }%
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Add cells commands
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Counter for the pointsum
 \newcounter{pointsum}
 
@@ -176,6 +335,7 @@
     {\cellcolor{exceptional}}
     {}
 }
+
 % Add the cells to the sum row
 % Also add point information if enabled by summing the task points
 % @param the max group index
@@ -309,176 +469,6 @@
         }
     }%
 }
-\newcommand{\createtask}[5]{
-    \textbf{#1} #2 & \textbf{#3} \cells{#4}{#5} \\ \hline
-}
-\newcommand{\createsubtask}[4]{\small #1 & #2 \cells{#3}{#4} \\ \hline}
-
-\def\koma{,}
-\newcommand{\klam}[1]{(#1)}
-\def\lklam{(}
-\def\rklam{)}
-\def\elklam{[}
-\def\erklam{]}
-
-%%%%%%%%%%%%%%%%
-% Print Header %
-%%%%%%%%%%%%%%%%
-\newcounter{itergroups}
-
-\newcommand\clipstring[2][3cm]{%
-    \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
-}
-
-% http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
-% https://en.wikibooks.org/wiki/LaTeX/Counters
-\newcommand{\printheader}[1]{%
-    \setcounter{itergroups}{0}%
-
-    \ifthenelse{\equal{\showname}{\enable}}
-    {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Assignment} & \textbf{Pts}
-        } {%
-            \textbf{Aufgabe} & \textbf{Pkt}
-        }
-        % Add names by iterating all groups and use the participant-id to
-        % get the names for each participant from the participant-database
-        \DTLforeach*{groups} % database label
-        {\participants=participants} % assignment
-        {%
-            % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{itergroups}}{}{}%
-            {%
-                % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
-                {%
-                    &
-                    \foreach \n [count=\ni] in \participants {%
-                        \ifnum\ni=1%
-                        \else%
-                            \newline
-                        \fi%
-                        \clipstring[\linewidth]{%
-                            \DTLfetch{participants}{\personid}{\n}{\firstname}
-                            \DTLfetch{participants}{\personid}{\n}{\lastname}%
-                        }
-                    }%
-                }%
-            }%
-            \addtocounter{itergroups}{1}%
-        }%
-        % Add missing "and"s
-        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
-            &
-        }
-        \\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showstudy}{\enable}}
-    {%
-        \setcounter{itergroups}{0}
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Field of study} &
-        } {%
-            \textbf{Studienfach} &
-        }
-        % Add field of study by iterating all groups and use the participant-id to
-        % get the studyfield for each participant from the participant-database
-        \DTLforeach*{groups}%
-        {\participants=participants}%
-        {%
-            % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{itergroups}}{}{}%
-            {%
-                % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
-                {%
-                    &
-                    \foreach \n [count=\ni] in \participants {%
-                        \ifnum\ni=1%
-                        \else%
-                            \newline
-                        \fi%
-                        \clipstring[\linewidth]{%
-                            \DTLfetch{participants}{\personid}{\n}{\studyfield}%
-                        }
-                    }%
-                }%
-            }%
-            \addtocounter{itergroups}{1}%
-        }%
-        % Add missing "and"s
-        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
-            &
-        }
-        \\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showdate}{\enable}}
-    {%
-        \setcounter{itergroups}{0}
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Day \& Time} &
-        } {%
-            \textbf{Tag \& Uhrzeit} &
-        }
-        % Add dates by iterating all groups and access their day and time
-        \DTLforeach*{groups}%
-        {\date=date}%
-        {%
-            % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{itergroups}}{}{}%
-            {%
-                % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
-                {%
-                    & \date{}%
-                }%
-            }%
-            \addtocounter{itergroups}{1}%
-        }%
-        % Add missing "and"s
-        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
-            &
-        }
-        \\ \thickhline
-    }{}
-}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO reposition!
-\newcounter{complsum}
-\setcounter{complsum}{0}
-\DTLforeach*{assignments} % database label
-{\task=taskid, \points=points}
-{
-    \if\IsPositive{\task}%
-        \addtocounter{complsum}{\points}
-    \fi
-}
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\newcommand{\sumrow}[1]{%
-    \xintifEq{\pdflanguage}{\english}%
-    {%
-        \textbf{Sum:} &
-        \arabic{complsum}
-        \sumcells{#1} \\%
-    } {%
-        \textbf{Summe:} &
-        \arabic{complsum}
-        \sumcells{#1} \\%
-    }%
-}
-
-\setlength\extrarowheight{2pt}
-\setlist{nosep,after=\vspace*{-\baselineskip}}
-
-\renewcommand{\familydefault}{\sfdefault}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Begin document
@@ -504,7 +494,7 @@
         \setcounter{max}{1}
         \textcolor{red}{
             \hspace{6.0cm}
-            WARNING: No groups found!\newline
+            WARNING\@: No groups found!\newline
             \hspace*{6.0cm}
             Please check \semester\_\coursename/groups.csv if it really contains groups.
         }
@@ -514,10 +504,11 @@
     % Iterate all tables
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
 
-        \pgfmathparse{int((\value{tablenumber}+1)*\columns)}
+        \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
 
-        \begin{tabularx}{\textwidth}{ X"r"X*{\columnsMO}{|X} }
+        % Create new table (; is creates the thickline see \newcolumntype)
+        \begin{tabularx}{\textwidth}{ X;r;X*{\columnsMO}{|X} }
             \printheader{\arabic{upperbound}}
 
             \DTLforeach*{assignments} % database label
@@ -538,6 +529,7 @@
                         {\arabic{upperbound}}
                 \fi
                 % TODO create \thickhline at the end of a task
+                \thickhline
             }
             \sumrow{\arabic{upperbound}}
         \end{tabularx}
