@@ -106,9 +106,18 @@
 %%%%%%%%%%%%
 % Database %
 %%%%%%%%%%%%
+% Print error when no groups could be found
+% \ifthenelse{\equal{\DTLrowcount{groups}}{0}}
+% {%
+
+    % https://latex.org/forum/viewtopic.php?t=8609
+    % \PackageError{evaluation-sheet}{The groups.csv does not contain any groups.}{
+    %     Please check your groups.csv if it really contains groups.
+    % }
+% }{}
+
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
-% TODO if no groups are present still print the assignments column
 
 \DTLsetseparator{;}
 \DTLloaddb{participants}{\semester_\coursename/participants.csv}
@@ -491,6 +500,18 @@
     \setcounter{max}{\value{allcol}/\columns}
     \newcounter{upperbound}
 
+    % If no groups were found print a warning but still show assignments
+    \ifnum\value{max}=0
+        \setcounter{max}{1}
+        \textcolor{red}{
+            \hspace{6.0cm}
+            WARNING: No groups found!\newline
+            \hspace*{6.0cm}
+            Please check \semester\_\coursename/groups.csv if it really contains groups.
+        }
+        \vspace{-1.0cm}
+    \fi
+
     % Iterate all tables
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
 
@@ -523,15 +544,5 @@
         \end{tabularx}
         \clearpage
     }
-
-    % Print error when no groups could be found
-    \ifthenelse{\equal{\DTLrowcount{groups}}{0}}
-    {%
-        WARNING: No groups found!.
-        % https://latex.org/forum/viewtopic.php?t=8609
-        \PackageError{evaluation-sheet}{The groups.csv does not contain any groups.}{
-            Please check your groups.csv if it really contains groups.
-        }
-    }{}
 
 \end{document}
