@@ -108,7 +108,8 @@
 %%%%%%%%%%%%
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
-% TODO cant deal with empty columns for the points
+% TODO have groupids with gaps -> use the number of rows as index and not the groupidx
+% TODO if no groups are present still print the assignments column
 
 \DTLsetseparator{;}
 \DTLloaddb{participants}{\semester_\coursename/participants.csv}
@@ -174,46 +175,40 @@
     % ##1 is the groupindex
     \xintFor* ##1 in {\xintSeq{#1-\columnsMO}{#1}} \do {%
         &
-        % Get the information about the group if they are still in business
-        \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
-        \DTLgetvalue{\lastsheet}%
-        {groups}%
-        {##1}%
-        {\columnidx}%
-
-        % Reset point sum
-        \setcounter{pointsum}{0}
-        % Sum points of all assignments (no subtasks)
-        % By iterating over the row of the current group
-        % This loop iterates all tasks
-        \DTLforeach*{assignments} % database label
-        {\task=taskid}
+        % Check if the last page is not full and the column needs to stay empty
+        \xintifLt{\DTLrowcount{groups}}{##1}
+        {} % Number of rows is less than current index
         {
-            % Get the columnindex for this task
-            \DTLgetcolumnindex{\columnidx}{points}{\task}
-            \DTLgetvalue{\taskpoints}%
-            {points}%
-            {##1}% groupindex
+            % Get the information about the group if they are still in business
+            \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
+            \DTLgetvalue{\lastsheet}%
+            {groups}%
+            {##1}%
             {\columnidx}%
-            % Do not sum points of subtask only full assignments
-            \if\IsPositive{\task}%
-                \addtocounter{pointsum}{\taskpoints}
-            \else
-            \fi
-        }
 
-        % If the group info receives a 0 the group did not yet drop out
-        \xintifEq{0}{\lastsheet}
-        {
-            % If enabled show points
-            \xintifEq{\showpoints}{\enable}%
-            {%
-                \printpointssum{}
-            }{}
-        }{
-            % If the group info receives a number other than 0
-            % the number is tested againt the current sheet
-            \xintifLt{\sheetnumber}{\lastsheet}
+            % Reset point sum
+            \setcounter{pointsum}{0}
+            % Sum points of all assignments (no subtasks)
+            % By iterating over the row of the current group
+            % This loop iterates all tasks
+            \DTLforeach*{assignments} % database label
+            {\task=taskid}
+            {
+                % Get the columnindex for this task
+                \DTLgetcolumnindex{\columnidx}{points}{\task}
+                \DTLgetvalue{\taskpoints}%
+                {points}%
+                {##1}% groupindex
+                {\columnidx}%
+                % Do not sum points of subtask only full assignments
+                \if\IsPositive{\task}%
+                    \addtocounter{pointsum}{\taskpoints}
+                \else
+                \fi
+            }
+
+            % If the group info receives a 0 the group did not yet drop out
+            \xintifEq{0}{\lastsheet}
             {
                 % If enabled show points
                 \xintifEq{\showpoints}{\enable}%
@@ -221,11 +216,22 @@
                     \printpointssum{}
                 }{}
             }{
-                % Mark cells as disabled
-                \cellcolor{disabled}
+                % If the group info receives a number other than 0
+                % the number is tested againt the current sheet
+                \xintifLt{\sheetnumber}{\lastsheet}
+                {
+                    % If enabled show points
+                    \xintifEq{\showpoints}{\enable}%
+                    {%
+                        \printpointssum{}
+                    }{}
+                }{
+                    % Mark cells as disabled
+                    \cellcolor{disabled}
+                }
             }
-        }
-    }%
+        }%
+    }
 }
 
 % Add the cells to the task rows
@@ -240,28 +246,22 @@
         % {true part}
         % {false part}
 
-        \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
-        \DTLgetvalue{\lastsheet}%
-        {groups}%
-        {##1}%
-        {\columnidx}%
-
-        % \DTLifstring{\DTLfetch{groups}{groupid}{##1}{\droppedout}}
-        % {〈string true〉}
-        % {false \DTLfetch{groups}{groupid}{##1}{\droppedout}}
-
-        % If the group info receives a 0 the group did not yet drop out
-        \xintifEq{0}{\lastsheet}
+        % Check if the last page is not full and the column needs to stay empty
+        \xintifLt{\DTLrowcount{groups}}{##1}
+        {} % Number of rows is less than current index
         {
-            % If enabled show points
-            \xintifEq{\showpoints}{\enable}%
-            {%
-                \DTLfetch{points}{groupid}{##1}{#1}
-            }{}
-        }{
-            % If the group info receives a number other than 0
-            % the number is tested againt the current sheet
-            \xintifLt{\sheetnumber}{\lastsheet}
+            \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
+            \DTLgetvalue{\lastsheet}%
+            {groups}%
+            {##1}%
+            {\columnidx}%
+
+            % \DTLifstring{\DTLfetch{groups}{groupid}{##1}{\droppedout}}
+            % {〈string true〉}
+            % {false \DTLfetch{groups}{groupid}{##1}{\droppedout}}
+
+            % If the group info receives a 0 the group did not yet drop out
+            \xintifEq{0}{\lastsheet}
             {
                 % If enabled show points
                 \xintifEq{\showpoints}{\enable}%
@@ -269,7 +269,18 @@
                     \DTLfetch{points}{groupid}{##1}{#1}
                 }{}
             }{
-                \cellcolor{disabled}
+                % If the group info receives a number other than 0
+                % the number is tested againt the current sheet
+                \xintifLt{\sheetnumber}{\lastsheet}
+                {
+                    % If enabled show points
+                    \xintifEq{\showpoints}{\enable}%
+                    {%
+                        \DTLfetch{points}{groupid}{##1}{#1}
+                    }{}
+                }{
+                    \cellcolor{disabled}
+                }
             }
         }
     }%
