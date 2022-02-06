@@ -380,7 +380,10 @@
             %\fi%
             \addtocounter{iterA}{1}%
         }%
-        % TODO add missing "and"s
+        % Add missing "and"s
+        \forloop{iterA}{\value{iterA} + 1}{\value{iterA} < #1}{
+            &
+        }
         \\ \hline
     }{}
 
@@ -418,6 +421,10 @@
             }%
             \addtocounter{iterA}{1}%
         }%
+        % Add missing "and"s
+        \forloop{iterA}{\value{iterA} + 1}{\value{iterA} < #1}{
+            &
+        }
         \\ \hline
     }{}
 
@@ -445,6 +452,10 @@
             }%
             \addtocounter{iterA}{1}%
         }%
+        % Add missing "and"s
+        \forloop{iterA}{\value{iterA} + 1}{\value{iterA} < #1}{
+            &
+        }
         \\ \thickhline
     }{}
 }
