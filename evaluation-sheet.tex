@@ -55,6 +55,12 @@
     %morekeywords={}
 }
 
+% Color for cells that should be disabled
+\colorlet{disabled}{black!25}
+% Color for sumcells with high percentage
+\colorlet{exceptional}{green!25}
+% Color for sumcells with low percentage
+\colorlet{underperformed}{red!25}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -145,6 +151,22 @@
 
 % Counter for the pointsum
 \newcounter{pointsum}
+
+% Print the current pointsum and color the cell depending on
+% the relation to the max points possible
+\newcommand{\printpointssum}{%
+    % Output point sum
+    \arabic{pointsum}
+
+    % Color sum column for groups with less then half of max points
+    \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
+    {\cellcolor{underperformed}}
+    {}
+    % Color sum column for groups with almost max points
+    \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
+    {\cellcolor{exceptional}}
+    {}
+}
 % Add the cells to the sum row
 % Also add point information if enabled by summing the task points
 % @param the max group index
@@ -159,48 +181,49 @@
         {##1}%
         {\columnidx}%
 
-        % Mark columns of groups that already dropped out
-        \xintifCmp{\sheetnumber}{\lastsheet}
+        % Reset point sum
+        \setcounter{pointsum}{0}
+        % Sum points of all assignments (no subtasks)
+        % By iterating over the row of the current group
+        % This loop iterates all tasks
+        \DTLforeach*{assignments} % database label
+        {\task=taskid}
         {
-            \cellcolor{black!25}
-        }{
-            \cellcolor{black!25}
-        }{
-            % Do not print if points should not be shown
+            % Get the columnindex for this task
+            \DTLgetcolumnindex{\columnidx}{points}{\task}
+            \DTLgetvalue{\taskpoints}%
+            {points}%
+            {##1}% groupindex
+            {\columnidx}%
+            % Do not sum points of subtask only full assignments
+            \if\IsPositive{\task}%
+                \addtocounter{pointsum}{\taskpoints}
+            \else
+            \fi
+        }
+
+        % If the group info receives a 0 the group did not yet drop out
+        \xintifEq{0}{\lastsheet}
+        {
+            % If enabled show points
             \xintifEq{\showpoints}{\enable}%
             {%
-                % Reset point sum
-                \setcounter{pointsum}{0}
-                % Sum points of all assignments (no subtasks)
-                % By iterating over the row of the current group
-                % This loop iterates all tasks
-                \DTLforeach*{assignments} % database label
-                {\task=taskid}
-                {
-                    % Get the columnindex for this task
-                    \DTLgetcolumnindex{\columnidx}{points}{\task}
-                    \DTLgetvalue{\taskpoints}%
-                    {points}%
-                    {##1}% groupindex
-                    {\columnidx}%
-                    % Do not sum points of subtask only full assignments
-                    \if\IsPositive{\task}%
-                        \addtocounter{pointsum}{\taskpoints}
-                    \else
-                    \fi
-                }
-                % Output point sum
-                \arabic{pointsum}
-
-                % Color sum column for groups with less then half of max points
-                \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
-                {\cellcolor{red!25}}
-                {}
-                % Color sum column for groups with almost max points
-                \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
-                {\cellcolor{green!25}}
-                {}
+                \printpointssum{}
             }{}
+        }{
+            % If the group info receives a number other than 0
+            % the number is tested againt the current sheet
+            \xintifLt{\sheetnumber}{\lastsheet}
+            {
+                % If enabled show points
+                \xintifEq{\showpoints}{\enable}%
+                {%
+                    \printpointssum{}
+                }{}
+            }{
+                % Mark cells as disabled
+                \cellcolor{disabled}
+            }
         }
     }%
 }
@@ -218,7 +241,7 @@
         % {false part}
 
         \DTLgetcolumnindex{\columnidx}{groups}{\droppedout}
-        \DTLgetvalue{\tmpcmd}%
+        \DTLgetvalue{\lastsheet}%
         {groups}%
         {##1}%
         {\columnidx}%
@@ -227,16 +250,27 @@
         % {〈string true〉}
         % {false \DTLfetch{groups}{groupid}{##1}{\droppedout}}
 
-        \xintifCmp{\sheetnumber}{\tmpcmd}
+        % If the group info receives a 0 the group did not yet drop out
+        \xintifEq{0}{\lastsheet}
         {
-            \cellcolor{black!25}
-        }{
-            \cellcolor{black!25}
-        }{
+            % If enabled show points
             \xintifEq{\showpoints}{\enable}%
             {%
                 \DTLfetch{points}{groupid}{##1}{#1}
             }{}
+        }{
+            % If the group info receives a number other than 0
+            % the number is tested againt the current sheet
+            \xintifLt{\sheetnumber}{\lastsheet}
+            {
+                % If enabled show points
+                \xintifEq{\showpoints}{\enable}%
+                {%
+                    \DTLfetch{points}{groupid}{##1}{#1}
+                }{}
+            }{
+                \cellcolor{disabled}
+            }
         }
     }%
 }
