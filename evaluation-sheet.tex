@@ -97,14 +97,18 @@
 \newcommand{\columnsMO}{3}
 \newcommand{\columnsPO}{5}
 
-%%%%%%%%%%%%%%%
-% Database TODO %
-%%%%%%%%%%%%%%%
+%%%%%%%%%%%%
+% Database %
+%%%%%%%%%%%%
+% TODO handle if participant could not be found in participant.csv
+% TODO how to mark and process participants that dropped out or changed
+% TODO cant deal with empty columns for the points
+
 \DTLsetseparator{;}
-\DTLloaddb{participants}{\semester"_"\coursename/participants.csv}
-\DTLloaddb{groups}{\semester"_"\coursename/groups.csv}
-\DTLloaddb{points}{\semester"_"\coursename/sheet_\sheetnumber_points.csv}
-\DTLloaddb{assignments}{\semester"_"\coursename/sheet_\sheetnumber.csv}
+\DTLloaddb{participants}{\semester_\coursename/participants.csv}
+\DTLloaddb{groups}{\semester_\coursename/groups.csv}
+\DTLloaddb{points}{\semester_\coursename/sheet_\sheetnumber_points.csv}
+\DTLloaddb{assignments}{\semester_\coursename/sheet_\sheetnumber.csv}
 
 % TODO does not work with ä, ü, ö
 \def\personid{Matrikelnr}
@@ -112,6 +116,8 @@
 \def\lastname{Nachname}
 \def\studyfield{Studiengaenge}
 \def\droppedout{droppedout}
+
+\def\pointsKey{points}
 
 %%%%%%%%%%%%
 % Commands %
@@ -124,6 +130,18 @@
 }
 \newcolumntype{"}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
 \makeatother
+
+% Test if text is a number
+% This is used to differentiate between "1" and "1a"
+% https://texfaq.org/FAQ-isitanum
+\def\IsPositive#1{%
+  TT\fi
+  \ifcat_\ifnum0<0#1 _\else A\fi
+}
+
+%%%%%%%%%%%%%%%%%%%%%
+% Add cells command %
+%%%%%%%%%%%%%%%%%%%%%
 
 % Counter for the pointsum
 \newcounter{pointsum}
@@ -173,6 +191,15 @@
                 }
                 % Output point sum
                 \arabic{pointsum}
+
+                % Color sum column for groups with less then half of max points
+                \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
+                {\cellcolor{red!25}}
+                {}
+                % Color sum column for groups with almost max points
+                \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
+                {\cellcolor{green!25}}
+                {}
             }{}
         }
     }%
@@ -225,14 +252,9 @@
 \def\elklam{[}
 \def\erklam{]}
 
-%%%%%%%%%%%%%%%
-% Input files %
-%%%%%%%%%%%%%%%
-
-% TODO handle if participant could not be found in participant.csv
-% TODO how to mark and process participants that dropped out or changed
-% TODO cant deal with empty columns for the points
-
+%%%%%%%%%%%%%%%%
+% Print Header %
+%%%%%%%%%%%%%%%%
 \newcounter{iter}
 \newcounter{iterA}
 % \pgfmathsetmacro\iterA{int(#1+4)}
@@ -358,12 +380,29 @@
     }{}
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO reposition!
+\newcounter{complsum}
+\setcounter{complsum}{0}
+\DTLforeach*{assignments} % database label
+{\task=taskid, \points=points}
+{
+    \if\IsPositive{\task}%
+        \addtocounter{complsum}{\points}
+    \fi
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \newcommand{\sumrow}[1]{%
     \xintifEq{\pdflanguage}{\english}%
     {%
-        \textbf{Sum:} & \sumcells{#1} \\%
+        \textbf{Sum:} &
+        \arabic{complsum}
+        \sumcells{#1} \\%
     } {%
-        \textbf{Summe:} & \sumcells{#1} \\%
+        \textbf{Summe:} &
+        \arabic{complsum}
+        \sumcells{#1} \\%
     }%
 }
 
@@ -372,16 +411,9 @@
 
 \renewcommand{\familydefault}{\sfdefault}
 
-%--------------------------------------------------------------
-
-% Test if text is a number
-% This is used to differentiate between "1" and "1a"
-% https://texfaq.org/FAQ-isitanum
-\def\IsPositive#1{%
-  TT\fi
-  \ifcat_\ifnum0<0#1 _\else A\fi
-}
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Begin document
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
     \newcounter{allcol}
     \setcounter{allcol}{\columnsMO}
