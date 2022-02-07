@@ -33,14 +33,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add a teaching person
-\newcommand{\tutorfirst}{0}
-\newcommand{\tutorsecond}{1}
-
-% Select a teaching person
-\newcommand{\tutor}{\tutorfirst}
-% \newcommand{\tutor}{\tutorsecond}
-
 % Select or add a course name
 \def\coursename{example-coursename-1}
 % \def\coursename{example-coursename-2}
@@ -52,6 +44,7 @@
 % Select or add a sheet
 \def\sheetnumber{01}
 
+% Select a teaching person
 \def\tutornumber{1}
 
 % Add a language
@@ -88,6 +81,7 @@
 % This results in dropped out person having negative numbers
 % And persons can be added to other groups that are only shown from that sheet on forward
 % TODO ignore entries in groups.csv were no members are present
+% TODO if header is disabled \thickhline in printheader (235) does not work
 
 \DTLsetseparator{;}
 \DTLloaddb{participants}{\semester_\coursename/participants.csv}
@@ -340,14 +334,14 @@
 % @param the max group index
 % @param the task index (row)
 \newcommand{\createtask}[5]{%
-    \textbf{#1} #2 & \textbf{#3} \printtablerow{#5}{\printpoints{#4}} \\ \hline
+    \textbf{#1} #2 & \textbf{#3} \printtablerow{#5}{\printpoints{#4}}%
 }
 % @param the taskdescription
 % @param the points of the task
 % @param the max group index
 % @param the task index (row)
 \newcommand{\createsubtask}[4]{%
-    \small #1 & #2 \printtablerow{#4}{\printpoints{#3}} \\ \hline
+    \small #1 & #2 \printtablerow{#4}{\printpoints{#3}}%
 }
 
 \newcommand{\printpoints}[1]{%
@@ -395,6 +389,8 @@
 % Also add point information if enabled by summing the task points
 % @param the max group index
 \newcommand{\sumrow}[1]{%
+    % Add missing thickline before sumrow
+    \\ \thickhline
     \xintifEq{\pdflanguage}{\english}%
     {%
         \textbf{Sum:} &
@@ -437,6 +433,14 @@
         {%
             % Output point sum
             \arabic{pointsum}
+            % Color sum column for groups with less then half of max points
+            \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
+            {\cellcolor{underperformed}}
+            {}
+            % Color sum column for groups with almost max points
+            \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
+            {\cellcolor{exceptional}}
+            {}
         }{}
     }{
         % If the group info receives a number other than 0
@@ -448,19 +452,19 @@
             {%
                 % Output point sum
                 \arabic{pointsum}
+                % Color sum column for groups with less then half of max points
+                \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
+                {\cellcolor{underperformed}}
+                {}
+                % Color sum column for groups with almost max points
+                \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
+                {\cellcolor{exceptional}}
+                {}
             }{}
         }{
             \cellcolor{disabled}
         }
     }
-    % Color sum column for groups with less then half of max points
-    \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
-    {\cellcolor{underperformed}}
-    {}
-    % Color sum column for groups with almost max points
-    \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
-    {\cellcolor{exceptional}}
-    {}
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -509,7 +513,12 @@
             \DTLforeach*{assignments} % database label
             {\task=taskid, \title=title, \points=points, \text=description}
             {
+                % Create a thickline infront of a full assignment
+                % and a normal line infront of subassignments
                 \if\IsPositive{\task}%
+                    \ifnum\task>1%
+                        \\ \thickhline
+                    \fi
                     \createtask
                         {\title}
                         {\text}
@@ -517,14 +526,13 @@
                         {\task}
                         {\arabic{upperbound}}
                 \else
+                    \\ \hline
                     \createsubtask
                         {\text}
                         {\points}
                         {\task}
                         {\arabic{upperbound}}
                 \fi
-                % TODO create \thickhline at the end of a task
-                % \thickhline
             }
             \sumrow{\arabic{upperbound}}
         \end{tabularx}
