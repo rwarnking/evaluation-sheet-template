@@ -52,6 +52,8 @@
 % Select or add a sheet
 \def\sheetnumber{01}
 
+\def\tutornumber{1}
+
 % Add a language
 \newcommand{\english}{0}
 \newcommand{\german}{1}
@@ -63,6 +65,7 @@
 \newcommand{\enable}{1}
 \newcommand{\showname}{\enable}
 \newcommand{\showstudy}{\enable}
+\newcommand{\showidentifier}{\enable}
 \newcommand{\showdate}{\enable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
@@ -77,6 +80,9 @@
 %%%%%%%%%%%%
 % TODO handle if participant could not be found in participant.csv
 % TODO how to mark and process participants that dropped out or changed
+% TODO igrnore entries in groups.csv were no members are present
+% TODO add row for tutor group id
+% TODO add row for total group id
 
 \DTLsetseparator{;}
 \DTLloaddb{participants}{\semester_\coursename/participants.csv}
@@ -168,11 +174,10 @@
 % Print Header
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcounter{itergroups}
-% http://mirrors.ibiblio.org/CTAN/macros/generic/xint/xint.pdf
-% https://en.wikibooks.org/wiki/LaTeX/Counters
-\newcommand{\printheader}[1]{%
-    \setcounter{itergroups}{0}%
 
+% Determine which information rows should be used for the header.
+% Each row can be disabled.
+\newcommand{\printheader}[1]{%
     \ifthenelse{\equal{\showname}{\enable}}
     {%
         \xintifEq{\pdflanguage}{\english}%
@@ -181,53 +186,56 @@
         } {%
             \textbf{Aufgabe} & \textbf{Pkt}
         }
-        % Add names by iterating all groups and use the participant-id to
-        % get the names for each participant from the participant-database
-        \DTLforeach*{groups} % database label
-        {\participants=participants} % assignment
-        {%
-            % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{itergroups}}{}{}%
-            {%
-                % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
-                {%
-                    &
-                    \foreach \n [count=\ni] in \participants {%
-                        \ifnum\ni=1%
-                        \else%
-                            \newline
-                        \fi%
-                        \clipstring[\linewidth]{%
-                            \DTLfetch{participants}{\personid}{\n}{\firstname}
-                            \DTLfetch{participants}{\personid}{\n}{\lastname}%
-                        }
-                    }%
-                }%
-            }%
-            \addtocounter{itergroups}{1}%
-        }%
-        % Add missing "and"s
-        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
-            &
-        }
-        \\ \hline
+        \printheaderrow{#1}{\printcurnames}
     }{}
 
     \ifthenelse{\equal{\showstudy}{\enable}}
     {%
-        \setcounter{itergroups}{0}
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Field of study} &
         } {%
             \textbf{Studienfach} &
         }
-        % Add field of study by iterating all groups and use the participant-id to
-        % get the studyfield for each participant from the participant-database
-        \DTLforeach*{groups}%
-        {\participants=participants}%
+        \printheaderrow{#1}{\printcurstudy}
+    }{}
+
+    \ifthenelse{\equal{\showidentifier}{\enable}}
+    {%
+        \xintifEq{\pdflanguage}{\english}%
         {%
+            \textbf{Identifier} &
+        } {%
+            \textbf{Matrikelnummer} &
+        }
+        \printheaderrow{#1}{\printcuridentifier}
+    }{}
+
+    \ifthenelse{\equal{\showdate}{\enable}}
+    {%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{Day \& Time} &
+        } {%
+            \textbf{Tag \& Uhrzeit} &
+        }
+        \printheaderrow{#1}{\printcurdate}
+    }{}
+}
+
+% Generic function that prints all values of a row.
+% For this all groups are iterated. Furthermore a lower and upper bound
+% are defined to print only the groups of the current page.
+\newcommand{\printheaderrow}[2]{%
+    \setcounter{itergroups}{0}
+    % Add names by iterating all groups and use the participant-id to
+    % get the names for each participant from the participant-database
+    \DTLforeach*{groups} % database label
+    {\participants=participants, \tutorid=tutorid, \date=date} % assignment
+    {%
+        \xintifEq{\tutorid}{\tutornumber}%
+        {%
+            % Check bounds
             % Check if the iteration variable is smaller than #1 (upperbound)
             \xintifCmp{#1}{\value{itergroups}}{}{}%
             {%
@@ -235,56 +243,61 @@
                 \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
                 {%
                     &
-                    \foreach \n [count=\ni] in \participants {%
-                        \ifnum\ni=1%
-                        \else%
-                            \newline
-                        \fi%
-                        \clipstring[\linewidth]{%
-                            \DTLfetch{participants}{\personid}{\n}{\studyfield}%
-                        }
-                    }%
+                    #2
                 }%
             }%
             \addtocounter{itergroups}{1}%
-        }%
-        % Add missing "and"s
-        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
-            &
-        }
-        \\ \hline
-    }{}
+        }{}%
+    }%
+    % Add missing "and"s
+    \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
+        &
+    }
+    \\ \hline
+}
 
-    \ifthenelse{\equal{\showdate}{\enable}}
-    {%
-        \setcounter{itergroups}{0}
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Day \& Time} &
-        } {%
-            \textbf{Tag \& Uhrzeit} &
-        }
-        % Add dates by iterating all groups and access their day and time
-        \DTLforeach*{groups}%
-        {\date=date}%
-        {%
-            % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{itergroups}}{}{}%
-            {%
-                % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
-                {%
-                    & \date{}%
-                }%
-            }%
-            \addtocounter{itergroups}{1}%
+% Iterate and print all participants names given.
+% Each in his own line. The participants should be the members of one group.
+\newcommand{\printcurnames}{%
+    \foreach \n [count=\ni] in \participants {%
+        % Print a newline first for all but the first element
+        \ifnum\ni=1%
+        \else%
+            \newline
+        \fi%
+        \clipstring[\linewidth]{%
+            \DTLfetch{participants}{\personid}{\n}{\firstname}
+            \DTLfetch{participants}{\personid}{\n}{\lastname}%
         }%
-        % Add missing "and"s
-        \forloop{itergroups}{\value{itergroups} + 1}{\value{itergroups} < #1}{
-            &
-        }
-        \\ \thickhline
-    }{}
+    }%
+}
+
+% Iterate and print the study fields of the participants given.
+% The participants should be the members of one group.
+\newcommand{\printcurstudy}{%
+    \foreach \n [count=\ni] in \participants {%
+        % Print a newline first for all but the first element
+        \ifnum\ni=1%
+        \else%
+            \newline
+        \fi%
+        \clipstring[\linewidth]{%
+            \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+        }%
+    }%
+}
+
+% Iterate and print the identification numbers of the participants given.
+% The participants should be the members of one group.
+\newcommand{\printcuridentifier}{%
+    \foreach \n [count=\ni] in \participants {%
+        \n{}, %
+    }%
+}
+
+% Print the day and time for the currently processed slot
+\newcommand{\printcurdate}{%
+    \date{}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -478,9 +491,12 @@
     \setcounter{allcol}{\columnsMO}
 
     \DTLforeach*{groups} % database label
-    {}
+    {\tutorid=tutorid}
     {
-        \addtocounter{allcol}{1}
+        \xintifEq{\tutorid}{\tutornumber}%
+        {%
+            \addtocounter{allcol}{1}
+        }{}
     }
 
     % Variable to identify the table currently processed
