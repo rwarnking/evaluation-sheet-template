@@ -136,6 +136,7 @@
 }
 \newcolumntype{;}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
 \makeatother
+\newcolumntype{L}{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}X}
 
 % Test if text is a number
 % This is used to differentiate between "1" and "1a"
@@ -164,9 +165,9 @@
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
-            \textbf{Assignment} & \textbf{Pts}
+            \textbf{Assignment} & \textbf{Pts}%
         } {%
-            \textbf{Aufgabe} & \textbf{Pkt}
+            \textbf{Aufgabe} & \textbf{Pkt}%
         }
         \printtablerow{#1}{\printnames}\\ \hline
     }{}
@@ -175,9 +176,9 @@
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
-            \textbf{Field of study} &
+            \textbf{Field of study} &%
         } {%
-            \textbf{Studienfach} &
+            \textbf{Studienfach} &%
         }
         \printtablerow{#1}{\printstudy}\\ \hline
     }{}
@@ -186,9 +187,9 @@
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
-            \textbf{Person ID} &
+            \textbf{Person ID} &%
         } {%
-            \textbf{Matrikelnummer} &
+            \textbf{Matrikelnummer} &%
         }
         \printtablerow{#1}{\printpersonid}\\ \hline
     }{}
@@ -197,9 +198,9 @@
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
-            \textbf{Tutorgroup ID} &
+            \textbf{Tutorgroup ID} &%
         } {%
-            \textbf{Tutor-Gruppennummer} &
+            \textbf{Tutor-Gruppennummer} &%
         }
         \printtablerow{#1}{\printtutorgroupid}\\ \hline
     }{}
@@ -208,9 +209,9 @@
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
-            \textbf{Group ID} &
+            \textbf{Group ID} &%
         } {%
-            \textbf{Gruppennummer} &
+            \textbf{Gruppennummer} &%
         }
         \printtablerow{#1}{\printgroupid}\\ \hline
     }{}
@@ -219,9 +220,9 @@
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
-            \textbf{Day \& Time} &
+            \textbf{Day \& Time} &%
         } {%
-            \textbf{Tag \& Uhrzeit} &
+            \textbf{Tag \& Uhrzeit} &%
         }
         \printtablerow{#1}{\printdate}\\ \hline
     }{}
@@ -304,7 +305,7 @@
 % Iterate and print the identification numbers of the participants given.
 % The participants should be the members of one group.
 \newcommand{\printpersonid}{%
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
         \isactive{\n{}, }%
     }%
 }
@@ -335,54 +336,56 @@
 % @param the max group index
 % @param the task index (row)
 \newcommand{\createtask}[5]{%
-    \textbf{#1} #2 & \textbf{#3} \printtablerow{#5}{\printpoints{#4}}%
+    \textbf{#1} #2 & \textbf{#3}%
+    \printtablerow{#5}{\printpoints{#4}}%
 }
 % @param the taskdescription
 % @param the points of the task
 % @param the max group index
 % @param the task index (row)
 \newcommand{\createsubtask}[4]{%
-    \small #1 & #2 \printtablerow{#4}{\printpoints{#3}}%
+    \small #1 & #2%
+    \printtablerow{#4}{\printpoints{#3}}%
 }
 
 \newcounter{deadgroup}
 \newcommand{\printpoints}[1]{%
     % Set group as dead from the beginning
-    \setcounter{deadgroup}{\enable}
+    \setcounter{deadgroup}{\enable}%
     % Iterate the sheets at which each member joined or dropped out
     \foreach \n in \lastsheet {%
         % Check if the member dropped out or joined
-        \xintifLt{\n}{0}
-        {
+        \xintifLt{\n}{0}%
+        {%
             % Get absolute value and compare to current sheetnumber
-            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}
+            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}%
             % If the member did not yet drop out - the group is alive
-            {\setcounter{deadgroup}{\disable}}
+            {\setcounter{deadgroup}{\disable}}%
             % Otherwise the member is not part of the group for this sheet
             {}% Do not change value since the group counts as dead from the start
-        }{
+        }{%
             % Compare to current sheetnumber
-            \xintifLt{\sheetnumber}{\n}
+            \xintifLt{\sheetnumber}{\n}%
             % The member is not part of the group for this sheet
             {}% Do not change value since the group counts as dead from the start
             % Otherwise the group is alive
-            {\setcounter{deadgroup}{\disable}}
-        }
-    }
-
+            {\setcounter{deadgroup}{\disable}}%
+        }%
+    }%
+    %
     % If the counter equals \enable the group has no active members for this sheet
-    \xintifEq{\value{deadgroup}}{\enable}
-    {
+    \xintifEq{\value{deadgroup}}{\enable}%
+    {%
         % Disable the cell
-        \cellcolor{disabled}
-    }{
+        \cellcolor{disabled}%
+    }{%
         % If enabled show points
         \xintifEq{\showpoints}{\enable}%
         {%
             % Get point value of this group for the given task
-            \DTLfetch{points}{groupid}{\groupid}{#1}
-        }{}
-    }
+            \DTLfetch{points}{groupid}{\groupid}{#1}%
+        }{}%
+    }%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -408,12 +411,12 @@
     \xintifEq{\pdflanguage}{\english}%
     {%
         \textbf{Sum:} &
-        \arabic{complsum}
-        \printtablerow{#1}{\printpointsum{\groupid}} \\%
+        \arabic{complsum}%
+        \printtablerow{#1}{\printpointsum{\groupid}}\\%
     } {%
         \textbf{Summe:} &
-        \arabic{complsum}
-        \printtablerow{#1}{\printpointsum{\groupid}} \\%
+        \arabic{complsum}%
+        \printtablerow{#1}{\printpointsum{\groupid}}\\%
     }%
 }
 
@@ -423,74 +426,74 @@
 % the relation to the max points possible
 \newcommand{\printpointsum}[1]{%
     % Get the columnindex for this task
-    \DTLgetcolumnindex{\columnidx}{groups}{droppedout}
+    \DTLgetcolumnindex{\columnidx}{groups}{droppedout}%
     \DTLgetvalue{\lastsheet}%
     {groups}%
     {#1}% groupindex
     {\columnidx}%
-
+    %
     % Set group as dead from the beginning
-    \setcounter{deadgroup}{\enable}
+    \setcounter{deadgroup}{\enable}%
     % Iterate the sheets at which each member joined or dropped out
     \foreach \n in \lastsheet {%
         % Check if the member dropped out or joined
-        \xintifLt{\n}{0}
-        {
+        \xintifLt{\n}{0}%
+        {%
             % Get absolute value and compare to current sheetnumber
-            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}
+            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}%
             % If the member did not yet drop out - the group is alive
-            {\setcounter{deadgroup}{\disable}}
+            {\setcounter{deadgroup}{\disable}}%
             % Otherwise the member is not part of the group for this sheet
             {}% Do not change value since the group counts as dead from the start
-        }{
+        }{%
             % Compare to current sheetnumber
-            \xintifLt{\sheetnumber}{\n}
+            \xintifLt{\sheetnumber}{\n}%
             % The member is not part of the group for this sheet
             {}% Do not change value since the group counts as dead from the start
             % Otherwise the group is alive
-            {\setcounter{deadgroup}{\disable}}
-        }
-    }
-
+            {\setcounter{deadgroup}{\disable}}%
+        }%
+    }%
+    %
     % If the counter equals \enable the group has no active members for this sheet
-    \xintifEq{\value{deadgroup}}{\enable}
-    {
+    \xintifEq{\value{deadgroup}}{\enable}%
+    {%
         % Disable the cell
-        \cellcolor{disabled}
-    }{
+        \cellcolor{disabled}%
+    }{%
         % If enabled show points
         \xintifEq{\showpoints}{\enable}%
         {%
             % Sum points of group to print them
-            \setcounter{pointsum}{0}
+            \setcounter{pointsum}{0}%
             \DTLforeach*{assignments} % database label
-            {\task=taskid}
+            {\task=taskid}%
             {%
                 % Get the columnindex for this task
-                \DTLgetcolumnindex{\columnidx}{points}{\task}
+                \DTLgetcolumnindex{\columnidx}{points}{\task}%
                 \DTLgetvalue{\taskpoints}%
                 {points}%
                 {#1}% groupindex
                 {\columnidx}%
                 % Do not sum points of subtask, only full assignments
                 \if\IsPositive{\task}%
-                    \addtocounter{pointsum}{\taskpoints}
-                \else
-                \fi
+                    \addtocounter{pointsum}{\taskpoints}%
+                \else%
+                \fi%
             }%
-
+            %
             % Output point sum
-            \arabic{pointsum}
+            \arabic{pointsum}%
             % Color sum column for groups with less then half of max points
             \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
-            {\cellcolor{underperformed}}
-            {}
+            {\cellcolor{underperformed}}%
+            {}%
             % Color sum column for groups with almost max points
             \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
-            {\cellcolor{exceptional}}
-            {}
-        }{}
-    }
+            {\cellcolor{exceptional}}%
+            {}%
+        }{}%
+    }%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -533,18 +536,18 @@
         \setcounter{upperbound}{\pgfmathresult}
 
         % Create new table (; is creates the thickline see \newcolumntype)
-        \begin{tabularx}{\textwidth}{ X;r;X*{\columnsMO}{|X} }
+        \begin{tabularx}{\textwidth}{ L;r;L*{\columnsMO}{|L} }
             \printheader{\arabic{upperbound}}
-
+            %
             \DTLforeach*{assignments} % database label
             {\task=taskid, \title=title, \points=points, \text=description}
-            {
+            {%
                 % Create a thickline infront of a full assignment
                 % and a normal line infront of subassignments
                 \if\IsPositive{\task}%
                     \ifnum\task>1%
-                        \\ \thickhline
-                    \fi
+                        \\ \thickhline%
+                    \fi%
                     \createtask
                         {\title}
                         {\text}
@@ -552,7 +555,7 @@
                         {\task}
                         {\arabic{upperbound}}
                 \else
-                    \\ \hline
+                    \\ \hline%
                     \createsubtask
                         {\text}
                         {\points}
