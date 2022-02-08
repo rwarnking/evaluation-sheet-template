@@ -1,0 +1,15 @@
+taskid; title; points; description
+1; Assignment 1; 10; Example of an item list:\begin{itemize}\item Topic 1\item Topic 2\item Topic 3\item Topic 4\item Topic 5\item Topic 6\item Topic 7\item Topic 8\end{itemize};
+2; Assignment 2; 0; \begin{itemize}\item Question 1\item Question 2\item Question 3\end{itemize};
+3; Longer very important title; 25; ;
+3a; Assignment 3a; 5; \textbf{Text 1};
+3b; Assignment 3b; 1; \textcolor{javapurple}{Text 2};
+3c; Assignment 3c; 9; Text [3];
+3d; Assignment 3d; 2; Text 4,5;
+3e; Assignment 3e; 4; Text $\sqrt{6}$;
+3f; Assignment 3f; 4; Text $7$;
+4; Assignment 4; 30; ;
+4a; Assignment 4a; 15; Explanation() 1;
+4b; Assignment 4b; 2; Explanation 2a\newline Explanation( 2b;
+4c; Assignment 4c; 8; Explanation $[3 + 3]$\newline $\Rightarrow$ Explanation) 3;
+4d; Assignment 4d; 5; (Explanation 4);

@@ -73,15 +73,8 @@
 %%%%%%%%%%%%
 % Database %
 %%%%%%%%%%%%
-% TODO how to mark and process participants that dropped out or changed
-% change dropped out parameter
-% 0 means: from this number on the person was member of the group
-% 7 means: from this number on the person was member of the group
-% -7 means: upto this number the person was member of this group
-% This results in dropped out person having negative numbers
-% And persons can be added to other groups that are only shown from that sheet on forward
-% TODO ignore entries in groups.csv were no members are present
 % TODO if header is disabled \thickhline in printheader (235) does not work
+% TODO cellcolor is to big
 
 \DTLsetseparator{;}
 \DTLloaddb{participants}{\semester_\coursename/participants.csv}
@@ -175,7 +168,7 @@
         } {%
             \textbf{Aufgabe} & \textbf{Pkt}
         }
-        \printtablerow{#1}{\printnames} \\ \hline
+        \printtablerow{#1}{\printnames}\\ \hline
     }{}
 
     \ifthenelse{\equal{\showstudy}{\enable}}
@@ -186,7 +179,7 @@
         } {%
             \textbf{Studienfach} &
         }
-        \printtablerow{#1}{\printstudy} \\ \hline
+        \printtablerow{#1}{\printstudy}\\ \hline
     }{}
 
     \ifthenelse{\equal{\showpersonid}{\enable}}
@@ -197,7 +190,7 @@
         } {%
             \textbf{Matrikelnummer} &
         }
-        \printtablerow{#1}{\printpersonid} \\ \hline
+        \printtablerow{#1}{\printpersonid}\\ \hline
     }{}
 
     \ifthenelse{\equal{\showtutorgroupid}{\enable}}
@@ -208,7 +201,7 @@
         } {%
             \textbf{Tutor-Gruppennummer} &
         }
-        \printtablerow{#1}{\printtutorgroupid} \\ \hline
+        \printtablerow{#1}{\printtutorgroupid}\\ \hline
     }{}
 
     \ifthenelse{\equal{\showgroupid}{\enable}}
@@ -219,7 +212,7 @@
         } {%
             \textbf{Gruppennummer} &
         }
-        \printtablerow{#1}{\printgroupid} \\ \hline
+        \printtablerow{#1}{\printgroupid}\\ \hline
     }{}
 
     \ifthenelse{\equal{\showdate}{\enable}}
@@ -230,7 +223,7 @@
         } {%
             \textbf{Tag \& Uhrzeit} &
         }
-        \printtablerow{#1}{\printdate} \\ \hline
+        \printtablerow{#1}{\printdate}\\ \hline
     }{}
     \thickhline
 }
@@ -269,18 +262,29 @@
     }
 }
 
+\newcommand{\isactive}[1]{%
+    % If the person is not yet in the group
+    \xintifLt{\sheetnumber}{\y}%
+    {}{%
+        % If the person left the group
+        \xintifLt{\y}{0}%
+        {%
+            \xintifGt{\sheetnumber*-1}{\y}%
+            {#1}{}%
+        }{#1}%
+    }%
+}
+
 % Iterate and print all participants names given.
 % Each in his own line. The participants should be the members of one group.
 \newcommand{\printnames}{%
-    \foreach \n [count=\ni] in \participants {%
-        % Print a newline first for all but the first element
-        \ifnum\ni=1%
-        \else%
-            \newline
-        \fi%
-        \clipstring[\linewidth]{%
-            \DTLfetch{participants}{\personid}{\n}{\firstname}
-            \DTLfetch{participants}{\personid}{\n}{\lastname}%
+    % https://tex.stackexchange.com/questions/193846/foreach-loop-between-two-lists
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
+        \isactive{%
+            \clipstring[\linewidth]{%
+                \DTLfetch{participants}{\personid}{\n}{\firstname}
+                \DTLfetch{participants}{\personid}{\n}{\lastname}%
+            }\hfill%
         }%
     }%
 }
@@ -288,14 +292,11 @@
 % Iterate and print the study fields of the participants given.
 % The participants should be the members of one group.
 \newcommand{\printstudy}{%
-    \foreach \n [count=\ni] in \participants {%
-        % Print a newline first for all but the first element
-        \ifnum\ni=1%
-        \else%
-            \newline
-        \fi%
-        \clipstring[\linewidth]{%
-            \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
+        \isactive{%
+            \clipstring[\linewidth]{%
+                \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+            }\hfill%
         }%
     }%
 }
@@ -303,8 +304,8 @@
 % Iterate and print the identification numbers of the participants given.
 % The participants should be the members of one group.
 \newcommand{\printpersonid}{%
-    \foreach \n [count=\ni] in \participants {%
-        \n{}, %
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {
+        \isactive{\n{}, }%
     }%
 }
 
@@ -344,30 +345,43 @@
     \small #1 & #2 \printtablerow{#4}{\printpoints{#3}}%
 }
 
+\newcounter{deadgroup}
 \newcommand{\printpoints}[1]{%
-    % If the group info receives a 0 the group did not yet drop out
-    \xintifEq{0}{\lastsheet}
+    % Set group as dead from the beginning
+    \setcounter{deadgroup}{\enable}
+    % Iterate the sheets at which each member joined or dropped out
+    \foreach \n in \lastsheet {%
+        % Check if the member dropped out or joined
+        \xintifLt{\n}{0}
+        {
+            % Get absolute value and compare to current sheetnumber
+            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}
+            % If the member did not yet drop out - the group is alive
+            {\setcounter{deadgroup}{\disable}}
+            % Otherwise the member is not part of the group for this sheet
+            {}% Do not change value since the group counts as dead from the start
+        }{
+            % Compare to current sheetnumber
+            \xintifLt{\sheetnumber}{\n}
+            % The member is not part of the group for this sheet
+            {}% Do not change value since the group counts as dead from the start
+            % Otherwise the group is alive
+            {\setcounter{deadgroup}{\disable}}
+        }
+    }
+
+    % If the counter equals \enable the group has no active members for this sheet
+    \xintifEq{\value{deadgroup}}{\enable}
     {
+        % Disable the cell
+        \cellcolor{disabled}
+    }{
         % If enabled show points
         \xintifEq{\showpoints}{\enable}%
         {%
             % Get point value of this group for the given task
             \DTLfetch{points}{groupid}{\groupid}{#1}
         }{}
-    }{
-        % If the group info receives a number other than 0
-        % the number is tested againt the current sheet
-        \xintifLt{\sheetnumber}{\lastsheet}
-        {
-            % If enabled show points
-            \xintifEq{\showpoints}{\enable}%
-            {%
-                % Get point value of this group for the given task
-                \DTLfetch{points}{groupid}{\groupid}{#1}
-            }{}
-        }{
-            \cellcolor{disabled}
-        }
     }
 }
 
@@ -408,29 +422,63 @@
 % Print the current pointsum and color the cell depending on
 % the relation to the max points possible
 \newcommand{\printpointsum}[1]{%
-    \setcounter{pointsum}{0}
-    \DTLforeach*{assignments} % database label
-    {\task=taskid}
-    {%
-        % Get the columnindex for this task
-        \DTLgetcolumnindex{\columnidx}{points}{\task}
-        \DTLgetvalue{\taskpoints}%
-        {points}%
-        {#1}% groupindex
-        {\columnidx}%
-        % Do not sum points of subtask, only full assignments
-        \if\IsPositive{\task}%
-            \addtocounter{pointsum}{\taskpoints}
-        \else
-        \fi
-    }%
-    %
-    % If the group info receives a 0 the group did not yet drop out
-    \xintifEq{0}{\lastsheet}
+    % Get the columnindex for this task
+    \DTLgetcolumnindex{\columnidx}{groups}{droppedout}
+    \DTLgetvalue{\lastsheet}%
+    {groups}%
+    {#1}% groupindex
+    {\columnidx}%
+
+    % Set group as dead from the beginning
+    \setcounter{deadgroup}{\enable}
+    % Iterate the sheets at which each member joined or dropped out
+    \foreach \n in \lastsheet {%
+        % Check if the member dropped out or joined
+        \xintifLt{\n}{0}
+        {
+            % Get absolute value and compare to current sheetnumber
+            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}
+            % If the member did not yet drop out - the group is alive
+            {\setcounter{deadgroup}{\disable}}
+            % Otherwise the member is not part of the group for this sheet
+            {}% Do not change value since the group counts as dead from the start
+        }{
+            % Compare to current sheetnumber
+            \xintifLt{\sheetnumber}{\n}
+            % The member is not part of the group for this sheet
+            {}% Do not change value since the group counts as dead from the start
+            % Otherwise the group is alive
+            {\setcounter{deadgroup}{\disable}}
+        }
+    }
+
+    % If the counter equals \enable the group has no active members for this sheet
+    \xintifEq{\value{deadgroup}}{\enable}
     {
+        % Disable the cell
+        \cellcolor{disabled}
+    }{
         % If enabled show points
         \xintifEq{\showpoints}{\enable}%
         {%
+            % Sum points of group to print them
+            \setcounter{pointsum}{0}
+            \DTLforeach*{assignments} % database label
+            {\task=taskid}
+            {%
+                % Get the columnindex for this task
+                \DTLgetcolumnindex{\columnidx}{points}{\task}
+                \DTLgetvalue{\taskpoints}%
+                {points}%
+                {#1}% groupindex
+                {\columnidx}%
+                % Do not sum points of subtask, only full assignments
+                \if\IsPositive{\task}%
+                    \addtocounter{pointsum}{\taskpoints}
+                \else
+                \fi
+            }%
+
             % Output point sum
             \arabic{pointsum}
             % Color sum column for groups with less then half of max points
@@ -442,28 +490,6 @@
             {\cellcolor{exceptional}}
             {}
         }{}
-    }{
-        % If the group info receives a number other than 0
-        % the number is tested againt the current sheet
-        \xintifLt{\sheetnumber}{\lastsheet}
-        {
-            % If enabled show points
-            \xintifEq{\showpoints}{\enable}%
-            {%
-                % Output point sum
-                \arabic{pointsum}
-                % Color sum column for groups with less then half of max points
-                \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
-                {\cellcolor{underperformed}}
-                {}
-                % Color sum column for groups with almost max points
-                \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
-                {\cellcolor{exceptional}}
-                {}
-            }{}
-        }{
-            \cellcolor{disabled}
-        }
     }
 }
 
