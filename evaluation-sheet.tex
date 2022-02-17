@@ -35,13 +35,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select or add a course name
 \def\coursename{example-coursename-1}
-% \def\coursename{example-coursename-2}
 
 % Select or add a semester
-\def\semester{201819}
+\def\semester{2018-19}
 % \def\semester{2018}
 
-% Select or add a sheet
+% Select or add a sheet (with leeding zero)
 \def\sheetnumber{01}
 
 % Select a teaching person
@@ -58,9 +57,9 @@
 % Enable or disable different rows of information
 \newcommand{\showname}{\enable}
 \newcommand{\showstudy}{\enable}
-\newcommand{\showpersonid}{\enable}
-\newcommand{\showtutorgroupid}{\enable}
-\newcommand{\showgroupid}{\enable}
+\newcommand{\showpersonid}{\disable}
+\newcommand{\showtutorgroupid}{\disable}
+\newcommand{\showgroupid}{\disable}
 \newcommand{\showdate}{\enable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
@@ -73,9 +72,6 @@
 %%%%%%%%%%%%
 % Database %
 %%%%%%%%%%%%
-% TODO if header is disabled \thickhline in printheader (235) does not work
-% TODO cellcolor is to big
-
 \DTLsetseparator{;}
 \DTLloaddb{participants}{\semester_\coursename/participants.csv}
 \DTLloaddb{groups}{\semester_\coursename/groups.csv}
@@ -136,6 +132,7 @@
 }
 \newcolumntype{;}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
 \makeatother
+% https://tex.stackexchange.com/questions/12703/
 \newcolumntype{L}{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}X}
 
 % Test if text is a number
@@ -161,72 +158,72 @@
 % Determine which information rows should be used for the header.
 % Each row can be disabled.
 \newcommand{\printheader}[1]{%
-    \ifthenelse{\equal{\showname}{\enable}}
+    \ifthenelse{\equal{\showname}{\enable}}%
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Assignment} & \textbf{Pts}%
         } {%
             \textbf{Aufgabe} & \textbf{Pkt}%
-        }
-        \printtablerow{#1}{\printnames}\\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showstudy}{\enable}}
+        }%
+        \printtablerow{#1}{\printnames}\\ \hline%
+    }{}%
+    %
+    \ifthenelse{\equal{\showstudy}{\enable}}%
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Field of study} &%
         } {%
             \textbf{Studienfach} &%
-        }
-        \printtablerow{#1}{\printstudy}\\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showpersonid}{\enable}}
+        }%
+        \printtablerow{#1}{\printstudy}\\ \hline%
+    }{}%
+    %
+    \ifthenelse{\equal{\showpersonid}{\enable}}%
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Person ID} &%
         } {%
             \textbf{Matrikelnummer} &%
-        }
-        \printtablerow{#1}{\printpersonid}\\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showtutorgroupid}{\enable}}
+        }%
+        \printtablerow{#1}{\printpersonid}\\ \hline%
+    }{}%
+    %
+    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Tutorgroup ID} &%
         } {%
             \textbf{Tutor-Gruppennummer} &%
-        }
-        \printtablerow{#1}{\printtutorgroupid}\\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showgroupid}{\enable}}
+        }%
+        \printtablerow{#1}{\printtutorgroupid}\\ \hline%
+    }{}%
+    %
+    \ifthenelse{\equal{\showgroupid}{\enable}}%
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Group ID} &%
         } {%
             \textbf{Gruppennummer} &%
-        }
-        \printtablerow{#1}{\printgroupid}\\ \hline
-    }{}
-
-    \ifthenelse{\equal{\showdate}{\enable}}
+        }%
+        \printtablerow{#1}{\printgroupid}\\ \hline%
+    }{}%
+    %
+    \ifthenelse{\equal{\showdate}{\enable}}%
     {%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Day \& Time} &%
         } {%
             \textbf{Tag \& Uhrzeit} &%
-        }
-        \printtablerow{#1}{\printdate}\\ \hline
-    }{}
-    \thickhline
+        }%
+        \printtablerow{#1}{\printdate}\\ \hline%
+    }{}%
+    \thickhline%
 }
 
 \newcounter{itergroups}
@@ -525,7 +522,8 @@
             \hspace{6.0cm}
             WARNING\@: No groups found!\newline
             \hspace*{6.0cm}
-            Please check \semester\_\coursename/groups.csv if it really contains groups.
+            Please check \semester\_\coursename/groups.csv if it really contains groups for tutor
+            \tutornumber.
         }
         \vspace{-1.0cm}
     \fi
