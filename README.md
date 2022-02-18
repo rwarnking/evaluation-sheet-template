@@ -1,14 +1,14 @@
-# PDF games
+# Evaluation Sheet Template
 
-[<img alt="Build status" src="https://img.shields.io/github/workflow/status/rwarnking/evaluation-sheet-template/Compile%20Evaluation%20Sheet?label=Build&logo=github&style=for-the-badge" height="23">](https://github.com/rwarnking/pdf-games/actions/workflows/compile.yml)
+[<img alt="Build status" src="https://img.shields.io/github/workflow/status/rwarnking/evaluation-sheet-template/Compile%20Evaluation%20Sheet?label=Build&logo=github&style=for-the-badge" height="23">](https://github.com/rwarnking/evaluation-sheet-template/actions/workflows/compile.yml)
 [<img alt="Linting status of master" src="https://img.shields.io/github/workflow/status/rwarnking/evaluation-sheet-template/Lint%20Code%20Base?label=Linter&style=for-the-badge" height="23">](https://github.com/marketplace/actions/super-linter)
 [<img alt="Version" src="https://img.shields.io/github/v/release/rwarnking/evaluation-sheet-template?style=for-the-badge" height="23">](https://github.com/rwarnking/evaluation-sheet-template/releases/latest)
 [<img alt="Licence" src="https://img.shields.io/github/license/rwarnking/evaluation-sheet-template?style=for-the-badge" height="23">](https://github.com/rwarnking/evaluation-sheet-template/blob/main/LICENSE)
 
 ## Description
 This is a LaTeX template to generate evaluation sheets.
-Given data about the participants and the assignments this template automatically
-generates the PDF and adjusts the layout accordingly.
+Given data about the participants and the assignments, this template allows to
+generate evaluation sheets with one of two layouts.
 
 ## Table of Contents
 1. [List of Features](#list-of-features)
@@ -23,6 +23,7 @@ generates the PDF and adjusts the layout accordingly.
 - Select from two layouts
 - Process a list of participants
 - Process a list of assignments
+- Process points of each group
 
 For a more detailed explanation about this project, take a look into the
 [wiki](https://github.com/rwarnking/evaluation-sheet-template/wiki) of this project.
@@ -37,28 +38,29 @@ e.g. [TeX Live](https://www.tug.org/texlive/) and the required packages.
 Alternativly you can use one of the install scripts
 ([bash](https://github.com/rwarnking/evaluation-sheet-template/blob/main/install.sh) |
 [powershell](https://github.com/rwarnking/evaluation-sheet-template/blob/main/install.ps1))
-to install all dependencies and the acrotex package automatically.
+to install all dependencies automatically.
 -->
 
 ### Dependencies
 
 These packages are needed:
-- [table](https://ctan.org/pkg/insdljs)
-- [dvipsnames](https://ctan.org/pkg/insdljs)
-- [listings](https://ctan.org/pkg/insdljs)
-- [enumitem](https://ctan.org/pkg/insdljs)
-- [pgffor](https://ctan.org/pkg/insdljs)
+- [datatool](https://www.ctan.org/pkg/datatool)
 - [xinttools](https://www.ctan.org/pkg/xint)
-- [xintfrac](https://ctan.org/pkg/insdljs)
-- [forloop](https://ctan.org/pkg/insdljs)
-- [calc](https://ctan.org/pkg/insdljs)
-- [tikz](https://ctan.org/pkg/insdljs)
-- [csvsimple](https://ctan.org/pkg/insdljs)
+- [xintfrac](https://www.ctan.org/pkg/xint)
+- [forloop](https://www.ctan.org/pkg/forloop)
+- [calc](https://www.ctan.org/pkg/calc)
+- [tikz](https://www.ctan.org/pkg/pgf)
+- [adjustbox](https://www.ctan.org/pkg/adjustbox) for `trimclip`
+    - Requires: [collectbox](https://www.ctan.org/pkg/collectbox)
+
+Required if used in the tasks:
+- [listings](https://www.ctan.org/pkg/listings)
+- [enumitem](https://www.ctan.org/pkg/enumitem)
 
 These packages are also needed but should usually be installed by default:
 - [inputenc](https://ctan.org/pkg/insdljs)
 - [geometry](https://www.ctan.org/pkg/geometry)
-- [array](https://ctan.org/pkg/insdljs)
+- [array](https://www.ctan.org/pkg/array)
 - [tabularx](https://www.ctan.org/pkg/tabularx)
 
 ## Usage
