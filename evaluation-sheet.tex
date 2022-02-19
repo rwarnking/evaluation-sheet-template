@@ -78,14 +78,24 @@
 \DTLloaddb{points}{\semester_\coursename/sheet_\sheetnumber_points.csv}
 \DTLloaddb{assignments}{\semester_\coursename/sheet_\sheetnumber.csv}
 
-% TODO does not work with ä, ü, ö
-\def\personid{Matrikelnr}
-\def\firstname{Vorname}
-\def\lastname{Nachname}
-\def\studyfield{Studiengaenge}
-\def\droppedout{droppedout}
+% For the particpants_db
+\def\personidKey{Matrikelnr}
+\def\firstnameKey{Vorname}
+\def\lastnameKey{Nachname}
+\def\studyfieldKey{Studiengaenge}
 
+% For the groups_db
+\def\tutoridKey{tutorid}
+\def\groupidKey{groupid}
+\def\dateKey{date}
+\def\participantsKey{participants}
+\def\activeKey{droppedout}
+
+% For the assignments_db
+\def\taskidKey{taskid}
+\def\titleKey{title}
 \def\pointsKey{points}
+\def\descriptionKey{description}
 
 %%%%%%%%%%
 % Colors %
@@ -235,10 +245,10 @@
     % Add names by iterating all groups and use the participant-id to
     % get the names for each participant from the participant-database
     \DTLforeach*{groups} % database label
-    {\groupid=groupid, \tutorid=tutorid, \date=date,%
-        \participants=participants, \lastsheet=droppedout} % assignment
+    {\groupid=groupid, \curtutorid=\tutoridKey, \date=date,%
+        \participants=participants, \lastsheet=\activeKey} % assignment
     {%
-        \xintifEq{\tutorid}{\tutornumber}%
+        \xintifEq{\curtutorid}{\tutornumber}%
         {%
             % Check bounds
             % Check if the iteration variable is smaller than #1 (upperbound)
@@ -280,8 +290,8 @@
     \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
         \isactive{%
             \clipstring[\linewidth]{%
-                \DTLfetch{participants}{\personid}{\n}{\firstname}
-                \DTLfetch{participants}{\personid}{\n}{\lastname}%
+                \DTLfetch{participants}{\personidKey}{\n}{\firstnameKey}
+                \DTLfetch{participants}{\personidKey}{\n}{\lastnameKey}%
             }\hfill%
         }%
     }%
@@ -293,7 +303,7 @@
     \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
         \isactive{%
             \clipstring[\linewidth]{%
-                \DTLfetch{participants}{\personid}{\n}{\studyfield}%
+                \DTLfetch{participants}{\personidKey}{\n}{\studyfieldKey}%
             }\hfill%
         }%
     }%
@@ -392,10 +402,10 @@
 \newcounter{complsum}
 \setcounter{complsum}{0}
 \DTLforeach*{assignments} % database label
-{\task=taskid, \points=points}
+{\task=taskid, \curpoints=\pointsKey}
 {
     \if\IsPositive{\task}%
-        \addtocounter{complsum}{\points}
+        \addtocounter{complsum}{\curpoints}
     \fi
 }
 
@@ -422,13 +432,8 @@
 % Print the current pointsum and color the cell depending on
 % the relation to the max points possible
 \newcommand{\printpointsum}[1]{%
-    % Get the columnindex for this task
-    \DTLgetcolumnindex{\columnidx}{groups}{droppedout}%
-    \DTLgetvalue{\lastsheet}%
-    {groups}%
-    {#1}% groupindex
-    {\columnidx}%
-    %
+    % OBACHT: \lastsheet needs to be defined (for example when iterating all groups)
+
     % Set group as dead from the beginning
     \setcounter{deadgroup}{\enable}%
     % Iterate the sheets at which each member joined or dropped out
@@ -501,9 +506,9 @@
     \setcounter{allcol}{\columnsMO}
 
     \DTLforeach*{groups} % database label
-    {\tutorid=tutorid}
+    {\curtutorid=\tutoridKey}
     {
-        \xintifEq{\tutorid}{\tutornumber}%
+        \xintifEq{\curtutorid}{\tutornumber}%
         {%
             \addtocounter{allcol}{1}
         }{}
@@ -538,7 +543,7 @@
             \printheader{\arabic{upperbound}}
             %
             \DTLforeach*{assignments} % database label
-            {\task=taskid, \title=title, \points=points, \text=description}
+            {\task=taskid, \title=title, \curpoints=\pointsKey, \text=description}
             {%
                 % Create a thickline infront of a full assignment
                 % and a normal line infront of subassignments
@@ -549,14 +554,14 @@
                     \createtask
                         {\title}
                         {\text}
-                        {\points}
+                        {\curpoints}
                         {\task}
                         {\arabic{upperbound}}
                 \else
                     \\ \hline%
                     \createsubtask
                         {\text}
-                        {\points}
+                        {\curpoints}
                         {\task}
                         {\arabic{upperbound}}
                 \fi
