@@ -1,12 +1,14 @@
-Write-Host "Installing dependencies (default packages)!"
+Write-Host "Installing dependencies (default/required packages)!"
 
-Invoke-Expression "tlmgr install inputenc"
-Invoke-Expression "tlmgr install geometry"
-Invoke-Expression "tlmgr install array"
-Invoke-Expression "tlmgr install tabularx"
+# For calc package
+# For tabularx package
+# For array package
+Invoke-Expression "tlmgr install tools"
 
+Write-Host ""
 Write-Host "Installing dependencies (mandatory packages)!"
 
+Invoke-Expression "tlmgr install geometry"
 # For loading the .csv files as database
 Invoke-Expression "tlmgr install datatool"
 # For \xintFor and similar
@@ -14,13 +16,13 @@ Invoke-Expression "tlmgr install datatool"
 Invoke-Expression "tlmgr install xint"
 # For \forloop
 Invoke-Expression "tlmgr install forloop"
-Invoke-Expression "tlmgr install calc"
-# For \pgfmathresult
-Invoke-Expression "tlmgr install tikz"
+# For \pgfmathresult and tikz
+Invoke-Expression "tlmgr install pgf"
 # Clip the informations to fit inside the table cells
 Invoke-Expression "tlmgr install collectbox"
 Invoke-Expression "tlmgr install adjustbox"
 
+Write-Host ""
 Write-Host "Installing dependencies (optional task packages)!"
 
 # Used to reduce distance between items in itemize (\setlist)
