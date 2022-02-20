@@ -73,10 +73,10 @@
 % Database %
 %%%%%%%%%%%%
 \DTLsetseparator{;}
-\DTLloaddb{participants}{\semester_\coursename/participants.csv}
-\DTLloaddb{groups}{\semester_\coursename/groups.csv}
-\DTLloaddb{points}{\semester_\coursename/sheet_\sheetnumber_points.csv}
-\DTLloaddb{assignments}{\semester_\coursename/sheet_\sheetnumber.csv}
+\DTLloaddb{participants_db}{\semester_\coursename/participants.csv}
+\DTLloaddb{groups_db}{\semester_\coursename/groups.csv}
+\DTLloaddb{points_db}{\semester_\coursename/sheet_\sheetnumber_points.csv}
+\DTLloaddb{assignments_db}{\semester_\coursename/sheet_\sheetnumber.csv}
 
 % For the particpants_db
 \def\personidKey{Matrikelnr}
@@ -244,9 +244,9 @@
     \setcounter{itergroups}{0}
     % Add names by iterating all groups and use the participant-id to
     % get the names for each participant from the participant-database
-    \DTLforeach*{groups} % database label
-    {\groupid=groupid, \curtutorid=\tutoridKey, \date=date,%
-        \participants=participants, \lastsheet=\activeKey} % assignment
+    \DTLforeach*{groups_db} % database label
+    {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
+        \curparticipants=\participantsKey, \lastsheet=\activeKey} % assignment
     {%
         \xintifEq{\curtutorid}{\tutornumber}%
         {%
@@ -283,15 +283,15 @@
     }%
 }
 
-% Iterate and print all participants names given.
+% Iterate and print all participant names given.
 % Each in his own line. The participants should be the members of one group.
 \newcommand{\printnames}{%
     % https://tex.stackexchange.com/questions/193846/foreach-loop-between-two-lists
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
         \isactive{%
             \clipstring[\linewidth]{%
-                \DTLfetch{participants}{\personidKey}{\n}{\firstnameKey}
-                \DTLfetch{participants}{\personidKey}{\n}{\lastnameKey}%
+                \DTLfetch{participants_db}{\personidKey}{\n}{\firstnameKey}
+                \DTLfetch{participants_db}{\personidKey}{\n}{\lastnameKey}%
             }\hfill%
         }%
     }%
@@ -300,10 +300,10 @@
 % Iterate and print the study fields of the participants given.
 % The participants should be the members of one group.
 \newcommand{\printstudy}{%
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
         \isactive{%
             \clipstring[\linewidth]{%
-                \DTLfetch{participants}{\personidKey}{\n}{\studyfieldKey}%
+                \DTLfetch{participants_db}{\personidKey}{\n}{\studyfieldKey}%
             }\hfill%
         }%
     }%
@@ -312,7 +312,7 @@
 % Iterate and print the identification numbers of the participants given.
 % The participants should be the members of one group.
 \newcommand{\printpersonid}{%
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \participants {%
+    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
         \isactive{\n{}, }%
     }%
 }
@@ -324,12 +324,12 @@
 }
 
 \newcommand{\printgroupid}{%
-    \groupid{}%
+    \curgroupid{}%
 }
 
 % Print the day and time for the currently processed slot
 \newcommand{\printdate}{%
-    \date{}%
+    \curdate{}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -390,7 +390,7 @@
         \xintifEq{\showpoints}{\enable}%
         {%
             % Get point value of this group for the given task
-            \DTLfetch{points}{groupid}{\groupid}{#1}%
+            \DTLfetch{points_db}{\groupidKey}{\curgroupid}{#1}%
         }{}%
     }%
 }
@@ -401,10 +401,10 @@
 % Calculate the pointsum for the complete sheet (all full assignments)
 \newcounter{complsum}
 \setcounter{complsum}{0}
-\DTLforeach*{assignments} % database label
-{\task=taskid, \curpoints=\pointsKey}
+\DTLforeach*{assignments_db} % database label
+{\curtask=\taskidKey, \curpoints=\pointsKey}
 {
-    \if\IsPositive{\task}%
+    \if\IsPositive{\curtask}%
         \addtocounter{complsum}{\curpoints}
     \fi
 }
@@ -419,11 +419,11 @@
     {%
         \textbf{Sum:} &
         \arabic{complsum}%
-        \printtablerow{#1}{\printpointsum{\groupid}}\\%
+        \printtablerow{#1}{\printpointsum{}}\\%
     } {%
         \textbf{Summe:} &
         \arabic{complsum}%
-        \printtablerow{#1}{\printpointsum{\groupid}}\\%
+        \printtablerow{#1}{\printpointsum{}}\\%
     }%
 }
 
@@ -431,8 +431,8 @@
 \newcounter{pointsum}
 % Print the current pointsum and color the cell depending on
 % the relation to the max points possible
-\newcommand{\printpointsum}[1]{%
-    % OBACHT: \lastsheet needs to be defined (for example when iterating all groups)
+\newcommand{\printpointsum}{%
+    % OBACHT: \lastsheet and \curgroupid need to be defined (for example by iterating all groups)
 
     % Set group as dead from the beginning
     \setcounter{deadgroup}{\enable}%
@@ -468,20 +468,20 @@
         {%
             % Sum points of group to print them
             \setcounter{pointsum}{0}%
-            \DTLforeach*{assignments} % database label
-            {\task=taskid}%
+            \DTLforeach*{assignments_db} % database label
+            {\curtask=\taskidKey}%
             {%
                 % Get the columnindex for this task
-                \DTLgetcolumnindex{\taskcolumn}{points}{\task}%
-                \DTLgetcolumnindex{\groupscolumn}{points}{\groupidKey}%
+                \DTLgetcolumnindex{\taskcolumn}{points_db}{\curtask}%
+                \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
                 % Use this instead of DTLgetrowindex to expand the argument
-                \xdtlgetrowindex{\grouprow}{points}{\groupscolumn}{\groupid}% groupindex
+                \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
                 \DTLgetvalue{\taskpoints}%
-                {points}%
+                {points_db}%
                 {\grouprow}%
                 {\taskcolumn}%
                 % Do not sum points of subtask, only full assignments
-                \if\IsPositive{\task}%
+                \if\IsPositive{\curtask}%
                     \addtocounter{pointsum}{\taskpoints}%
                 \else%
                 \fi%
@@ -508,7 +508,7 @@
     \newcounter{allcol}
     \setcounter{allcol}{\columnsMO}
 
-    \DTLforeach*{groups} % database label
+    \DTLforeach*{groups_db} % database label
     {\curtutorid=\tutoridKey}
     {
         \xintifEq{\curtutorid}{\tutornumber}%
@@ -545,27 +545,28 @@
         \begin{tabularx}{\textwidth}{ L;r;L*{\columnsMO}{|L} }
             \printheader{\arabic{upperbound}}
             %
-            \DTLforeach*{assignments} % database label
-            {\task=taskid, \title=title, \curpoints=\pointsKey, \text=description}
+            \DTLforeach*{assignments_db} % database label
+            {\curtask=\taskidKey, \curtitle=\titleKey,
+                \curpoints=\pointsKey, \curdesc=\descriptionKey}
             {%
                 % Create a thickline infront of a full assignment
                 % and a normal line infront of subassignments
-                \if\IsPositive{\task}%
-                    \ifnum\task>1%
+                \if\IsPositive{\curtask}%
+                    \ifnum\curtask>1%
                         \\ \thickhline%
                     \fi%
                     \createtask
-                        {\title}
-                        {\text}
+                        {\curtitle}
+                        {\curdesc}
                         {\curpoints}
-                        {\task}
+                        {\curtask}
                         {\arabic{upperbound}}
                 \else
                     \\ \hline%
                     \createsubtask
-                        {\text}
+                        {\curdesc}
                         {\curpoints}
-                        {\task}
+                        {\curtask}
                         {\arabic{upperbound}}
                 \fi
             }
