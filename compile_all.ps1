@@ -1,19 +1,109 @@
+# https://www.techtarget.com/searchwindowsserver/tip/Understanding-the-parameters-of-Windows-PowerShell-functions
 param(
-     [Parameter()]
-     [string]$SrcFolder,
+    [Parameter()]
+    [string]$SrcFolder,
 
-     [Parameter()]
-     [switch]$override,
+    [Parameter()]
+    $TutorList,
 
-     [Parameter()]
-     [switch]$help
+    [Parameter()]
+    [switch]$override,
+
+    [Parameter()]
+    [switch]$help
 )
 
+$FileName = "evaluation-sheet"
+$SheetName = "sheet_"
+$TexName = -join($FileName, ".tex")
+$PdfName = -join($FileName, ".pdf")
+
 # TODOs
-# Allow to select tutor
 # Enable disable points
 # Save and reset to default
 
+###################################################################################################
+# Functions
+###################################################################################################
+function New-Sheets {
+    param(
+        [Parameter()]
+        [int]$TutorID
+    )
+
+    Write-Host "Start compiling!"
+    $ErrCounter = 0
+
+    # For all sheets in the source directory
+    $SheetList = Get-ChildItem -Path .\$SrcFolder\ | Where-Object { $_.Name -match '^sheet_[0-9][0-9]\.csv$' }
+    $SheetList | ForEach-Object {
+        $tmp = $_ -split {$_ -eq "_" -or $_ -eq "."}
+        $SheetNumber = $tmp[1]
+
+        # Replace sheet line in tex file
+        $CurSheet = -join("\\def\\sheetnumber\{[0-9][0-9]\}")
+        $ReplSheet = -join("\def\sheetnumber{", $SheetNumber, "}")
+        (Get-Content -Path .\$TexName) |
+            ForEach-Object {$_ -Replace $CurSheet, $ReplSheet} |
+                Set-Content -Path .\$TexName
+
+        # Replace tutor id if present
+        if ($TutorID) {
+            $SheetName = -join("tutor_", $TutorID, "_sheet_")
+            $CurTutor = -join("\\def\\tutornumber\{[0-9]*\}")
+            $ReplTutor = -join("\def\tutornumber{", $TutorID, "}")
+            (Get-Content -Path .\$TexName) |
+                ForEach-Object {$_ -Replace $CurTutor, $ReplTutor} |
+                    Set-Content -Path .\$TexName
+        }
+
+        $NewPdfName = -join($SheetName, $SheetNumber, ".pdf")
+        $TgtPath = -join(".\", $TgtFolder, "\", $NewPdfName)
+        $TmpPath = -join(".\", $NewPdfName)
+
+        if ((Test-Path $TgtPath) -and !($override.IsPresent))
+        {
+            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
+            Write-Host "Can not move file"$TgtPath"! An old version is already present!" -ForegroundColor DarkRed
+            $ErrCounter++
+        }
+        elseif ((Test-Path $TmpPath) -and !($override.IsPresent))
+        {
+            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
+            Write-Host "Can not create file"$TmpPath"! An old version is already present!" -ForegroundColor DarkRed
+            $ErrCounter++
+        }
+        else
+        {
+            Write-Host "Compile sheet"$SheetNumber"!" -ForegroundColor DarkGreen
+
+            # Compile tex file
+            Invoke-Expression "latexmk -pdf $TexName"
+
+            # If override is active remove file
+            if ((Test-Path $TmpPath) -and $override.IsPresent)
+            {
+                Remove-Item $TmpPath
+            }
+            # Rename item such that the next sheet can be compiled
+            Rename-Item -Path $PdfName -NewName $TmpPath
+
+            # If override is active remove file in sheets
+            if ((Test-Path $TgtPath) -and $override.IsPresent)
+            {
+                Remove-Item $TgtPath
+                Write-Host "Overriding file"$TgtPath"!" -ForegroundColor DarkYellow
+            }
+            Move-Item -Path $TmpPath -Destination $TgtPath
+        }
+    }
+
+    return ($ErrCounter, $SheetList.Count)
+}
+
+###################################################################################################
+# Main
+###################################################################################################
 if ($help.IsPresent) {
     Write-Host "
     This script can automatically compile all sheets of a given folder.
@@ -21,8 +111,16 @@ if ($help.IsPresent) {
     a PDF is created using the evaluation-sheet.tex.
     Of course you are free to alter the needed directorys in this script.
 
-    Command for invoking compilation:
-    .\compile_all.ps1 2018-19_example-coursename-1
+    Parameter:
+        -SrcFolder The folder in which the sheets can be found
+        -TutorList Allows to process multiple tutors at once
+        -override, -o Override files if they are already present
+        -help, -h Shows how to use this script
+
+    Examples for invoking compilation:
+        .\compile_all.ps1 2018-19_example-coursename-1
+        .\compile_all.ps1 2018-19_example-coursename-1 -o
+        .\compile_all.ps1 2018-19_example-coursename-1 -TutorList (1,2)
     "
 } elseif ($SrcFolder) {
     $TgtFolder = "sheets"
@@ -52,75 +150,32 @@ if ($help.IsPresent) {
         [void](New-Item -ItemType Directory -Force -Path .\$TgtFolder)
     }
 
-    Write-Host "Start compiling!"
+    [int]$ErrorCounter = 0
+    [int]$SheetCounter = 0
 
-    $FileName = "evaluation-sheet"
-    $SheetName = "sheet_"
-    $TexName = -join($FileName, ".tex")
-    $PdfName = -join($FileName, ".pdf")
-    $ErrorCounter = 0
-
-    # For all sheets in the source directory
-    $SheetList = Get-ChildItem -Path .\$SrcFolder\ | Where-Object { $_.Name -match '^sheet_[0-9][0-9]\.csv$' }
-    $SheetList | ForEach-Object {
-        $tmp = $_ -split {$_ -eq "_" -or $_ -eq "."}
-        $SheetNumber = $tmp[1]
-
-        # Replace sheet line in tex file
-        $ToReplace = -join("\\def\\sheetnumber\{[0-9][0-9]\}")
-        $Replacement = -join("\def\sheetnumber{", $SheetNumber, "}")
-        (Get-Content -Path .\$TexName) |
-            ForEach-Object {$_ -Replace $ToReplace, $Replacement} |
-                Set-Content -Path .\$TexName
-
-        $NewPdfName = -join($SheetName, $SheetNumber, ".pdf")
-        $TgtPath = -join(".\", $TgtFolder, "\", $NewPdfName)
-        $TmpPath = -join(".\", $NewPdfName)
-
-        if ((Test-Path $TgtPath) -and !($override.IsPresent))
-        {
-            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
-            Write-Host "Can not move file"$TgtPath"! An old version is already present!" -ForegroundColor DarkRed
-            $ErrorCounter++
+    # If a tutorlist is present create sheets for all tutors otherwise just use the current tutor
+    if ($TutorList) {
+        $TutorList | ForEach-Object {
+            # https://stackoverflow.com/questions/22663848/
+            $result = (New-Sheets $_ | Select-Object -last 2)
+            $ErrorCounter += $result[0]
+            $SheetCounter += $result[1]
         }
-        elseif ((Test-Path $TmpPath) -and !($override.IsPresent))
-        {
-            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
-            Write-Host "Can not create file"$TmpPath"! An old version is already present!" -ForegroundColor DarkRed
-            $ErrorCounter++
-        }
-        else
-        {
-            Write-Host "Compile sheet"$SheetNumber"!" -ForegroundColor DarkGreen
-
-            # Compile tex file
-            Invoke-Expression "latexmk -pdf $TexName"
-
-            # If override is active remove file
-            if ((Test-Path $TmpPath) -and $override.IsPresent)
-            {
-                Remove-Item $TmpPath
-            }
-            # Rename item such that the next sheet can be compiled
-            Rename-Item -Path $PdfName -NewName $TmpPath
-
-            # If override is active remove file in sheets
-            if ((Test-Path $TgtPath) -and $override.IsPresent)
-            {
-                Remove-Item $TgtPath
-                Write-Host "Overriding file"$TgtPath"!" -ForegroundColor DarkYellow
-            }
-            Move-Item -Path $TmpPath -Destination $TgtPath
-        }
+    }
+    else
+    {
+        $result = (New-Sheets | Select-Object -last 2)
+        $ErrorCounter = $result[0]
+        $SheetCounter = $result[1]
     }
 
     # Cleanup
     Invoke-Expression "latexmk -c"
 
     if ($ErrorCounter -gt 0) {
-        Write-Host "Finished compiling."$ErrorCounter" files had errors! Processed" $SheetList.Count "Files." -ForegroundColor DarkRed
+        Write-Host "Finished compiling."$ErrorCounter" files had errors! Processed" $SheetCounter" files." -ForegroundColor DarkRed
     } else {
-        Write-Host "Finished compiling without errors! Processed"$SheetList.Count"Files." -ForegroundColor DarkGreen
+        Write-Host "Finished compiling without errors! Processed"$SheetCounter" files." -ForegroundColor DarkGreen
     }
 } else {
     Write-Host "This script can automatically compile all sheets of a given folder.
