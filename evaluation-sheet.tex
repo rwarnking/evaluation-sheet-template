@@ -472,11 +472,14 @@
             {\task=taskid}%
             {%
                 % Get the columnindex for this task
-                \DTLgetcolumnindex{\columnidx}{points}{\task}%
+                \DTLgetcolumnindex{\taskcolumn}{points}{\task}%
+                \DTLgetcolumnindex{\groupscolumn}{points}{\groupidKey}%
+                % Use this instead of DTLgetrowindex to expand the argument
+                \xdtlgetrowindex{\grouprow}{points}{\groupscolumn}{\groupid}% groupindex
                 \DTLgetvalue{\taskpoints}%
                 {points}%
-                {#1}% groupindex
-                {\columnidx}%
+                {\grouprow}%
+                {\taskcolumn}%
                 % Do not sum points of subtask, only full assignments
                 \if\IsPositive{\task}%
                     \addtocounter{pointsum}{\taskpoints}%
