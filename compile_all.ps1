@@ -24,7 +24,6 @@ $PdfName = -join($FileName, ".pdf")
 
 # TODOs
 # Save and reset to default
-# Actually replace the coursename with the input folder (\def\coursename{example-coursename-1})
 
 ###################################################################################################
 # Functions
@@ -41,27 +40,23 @@ function New-Sheets {
     # Replace tutor id if present
     if ($TutorID) {
         $SheetName = -join("tutor_", $TutorID, "_sheet_")
-        $CurTutor = -join("\\def\\tutornumber\{[0-9]*\}")
+        $CurTutor = -join("^\\def\\tutornumber\{[0-9]*\}$")
         $ReplTutor = -join("\def\tutornumber{", $TutorID, "}")
-        (Get-Content -Path .\$TexName) |
-            ForEach-Object {$_ -Replace $CurTutor, $ReplTutor} |
-                Set-Content -Path .\$TexName
+        Edit-LastOccur $CurTutor $ReplTutor
     }
 
     ###########################################
     # Loop all sheets in the source directory #
     ###########################################
-    $SheetList = Get-ChildItem -Path .\$SrcFolder\ | Where-Object { $_.Name -match '^sheet_[0-9][0-9]\.csv$' }
+    $SheetList = Get-ChildItem -Path .\$SrcFolder\ | Where-Object { $_.Name -match '^sheet_[0-9]*\.csv$' }
     $SheetList | ForEach-Object {
         $tmp = $_ -split {$_ -eq "_" -or $_ -eq "."}
         $SheetNumber = $tmp[1]
 
         # Replace sheet line in tex file
-        $CurSheet = -join("\\def\\sheetnumber\{[0-9][0-9]\}")
+        $CurSheet = -join("^\\def\\sheetnumber\{[0-9]*\}$")
         $ReplSheet = -join("\def\sheetnumber{", $SheetNumber, "}")
-        (Get-Content -Path .\$TexName) |
-            ForEach-Object {$_ -Replace $CurSheet, $ReplSheet} |
-                Set-Content -Path .\$TexName
+        Edit-LastOccur $CurSheet $ReplSheet
 
         $NewPdfName = -join($SheetName, $SheetNumber, ".pdf")
         $TgtPath = -join(".\", $TgtFolder, "\", $NewPdfName)
@@ -117,6 +112,33 @@ function New-Sheets {
     return ($ErrCounter, $SheetList.Count)
 }
 
+# https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-7.2
+# https://stackoverflow.com/questions/50044959/get-a-line-number-on-powershell
+# Only replace the last occurance of pattern to keep the unused entries
+function Edit-LastOccur {
+    param(
+        [Parameter()]
+        [string]$Pattern,
+
+        [Parameter()]
+        [string]$Replacement
+    )
+
+    # Get file content and store it into $content variable
+    $content = Get-Content -Path .\$TexName
+    # Get line numbers
+    $linenumber = $content | select-string $Pattern
+
+    # If at least one match was found, replace
+    if ($linenumber.Count -gt 0) {
+        # Replace the line with the new text
+        $content[$linenumber.LineNumber[-1] - 1] = $Replacement
+
+        # Set the new content
+        $content | Set-Content -Path .\$TexName
+    }
+}
+
 ###################################################################################################
 # Main
 ###################################################################################################
@@ -169,19 +191,27 @@ if ($help.IsPresent) {
 
     [int]$ErrorCounter = 0
     [int]$SheetCounter = 0
+    $tmp = $SrcFolder -split "_"
 
-    # Enable if parameter present
+    # Set the year in the tex file
+    $CurYear = "^\\def\\semester\{[\d-]*\}"
+    $ReplYear = -join("\def\semester{", $tmp[0], "} % chktex 8")
+    Edit-LastOccur $CurYear $ReplYear
+
+    # Set the course name in the tex file
+    $CurDir = "^\\def\\coursename\{.*\}$"
+    $ReplDir = -join("\def\coursename{", $tmp[1], "}")
+    Edit-LastOccur $CurDir $ReplDir
+
+    # Enable points if parameter present
     # Otherwise disable points
+    $CurPoints = "^\\newcommand\{\\showpoints\}\{\\(disable|enable)\}$"
     if ($points.IsPresent) {
-        $CurPoints = "\\newcommand\{\\showpoints\}\{\\disable\}"
         $ReplPoints = "\newcommand{\showpoints}{\enable}"
     } else {
-        $CurPoints = "\\newcommand\{\\showpoints\}\{\\enable\}"
         $ReplPoints = "\newcommand{\showpoints}{\disable}"
     }
-    (Get-Content -Path .\$TexName) |
-    ForEach-Object {$_ -Replace $CurPoints, $ReplPoints} |
-        Set-Content -Path .\$TexName
+    Edit-LastOccur $CurPoints $ReplPoints
 
     #########################
     # Call compile function #

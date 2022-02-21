@@ -40,7 +40,7 @@
 \def\semester{2018-19} % chktex 8
 % \def\semester{2018}
 
-% Select or add a sheet (with leeding zero)
+% Select or add a sheet (with leading zero)
 \def\sheetnumber{01}
 
 % Select a teaching person
@@ -75,8 +75,12 @@
 \DTLsetseparator{;}
 \DTLloaddb{participants_db}{\semester_\coursename/participants.csv}
 \DTLloaddb{groups_db}{\semester_\coursename/groups.csv}
-\DTLloaddb{points_db}{\semester_\coursename/sheet_\sheetnumber_points.csv}
 \DTLloaddb{assignments_db}{\semester_\coursename/sheet_\sheetnumber.csv}
+% Only try to load if enabled
+\ifthenelse{\equal{\showpoints}{\enable}}%
+{%
+    \DTLloaddb{points_db}{\semester_\coursename/sheet_\sheetnumber_points.csv}
+}{}
 
 % For the particpants_db
 \def\personidKey{Matrikelnr}
