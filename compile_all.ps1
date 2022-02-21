@@ -21,9 +21,7 @@ $FileName = "evaluation-sheet"
 $SheetName = "sheet_"
 $TexName = -join($FileName, ".tex")
 $PdfName = -join($FileName, ".pdf")
-
-# TODOs
-# Save and reset to default
+$changes = @()
 
 ###################################################################################################
 # Functions
@@ -131,6 +129,12 @@ function Edit-LastOccur {
 
     # If at least one match was found, replace
     if ($linenumber.Count -gt 0) {
+        # Save a line only once
+        if (!$script:changes.Contains($linenumber.LineNumber[-1])) {
+            $script:changes += $linenumber.LineNumber[-1]
+            $script:changes += $linenumber
+        }
+
         # Replace the line with the new text
         $content[$linenumber.LineNumber[-1] - 1] = $Replacement
 
@@ -230,6 +234,15 @@ if ($help.IsPresent) {
         $result = (New-Sheets | Select-Object -last 2)
         $ErrorCounter = $result[0]
         $SheetCounter = $result[1]
+    }
+
+    # Change the content back to the original
+    for ($i=0; $i -lt $changes.length; $i+=2) {
+        # Get file content and store it into $content variable
+        $content = Get-Content -Path .\$TexName
+        $content[$changes[$i] - 1] = $changes[$i+1]
+        # Set the new content
+        $content | Set-Content -Path .\$TexName
     }
 
     # Cleanup
