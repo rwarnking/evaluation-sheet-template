@@ -23,9 +23,32 @@ $TexName = -join($FileName, ".tex")
 $PdfName = -join($FileName, ".pdf")
 $changes = @()
 
+# TODOs
+# documentation in .tex and here
+
 ###################################################################################################
 # Functions
 ###################################################################################################
+<#
+.SYNOPSIS
+Compile all sheets
+
+.DESCRIPTION
+Creates a PDF for each sheet found inside the given folder.
+For this the $Filename.tex is compiled using latexmk for each sheet.
+Each sheet is renamed according to the tutor settings and moved inside a $TgtFolder folder.
+
+.PARAMETER TutorID
+The tutor id that should is used to select the corresponding groups and there points if needed.
+
+.EXAMPLE
+$result = (New-Sheets $_ | Select-Object -last 2)
+
+.NOTES
+Overrides files according to $override.IsPresent variable.
+Returns a value of how many errors were encountered and a value for the number of
+processed filed
+#>
 function New-Sheets {
     param(
         [Parameter()]
@@ -113,6 +136,29 @@ function New-Sheets {
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-7.2
 # https://stackoverflow.com/questions/50044959/get-a-line-number-on-powershell
 # Only replace the last occurance of pattern to keep the unused entries
+<#
+.SYNOPSIS
+Edits the $TexName file.
+
+.DESCRIPTION
+Replaces the LAST occurance of $Pattern with $Replacement inside the $TexName file.
+For this all occurances of the pattern inside the file are saved in an array.
+If the array is not empty the linenumber of the last entry is used to modifiy the content.
+If a change is not present inside the $script:changes array the change is saved, so
+the change can be revoked later
+
+.PARAMETER Pattern
+A powershell regular expression string that shall be matched inside the $TexName file.
+
+.PARAMETER Replacement
+A replacement string that shall replace the last found $Pattern.
+
+.EXAMPLE
+Edit-LastOccur "Regexpattern" "Replacement"
+
+.NOTES
+Does nothing if no matches were found.
+#>
 function Edit-LastOccur {
     param(
         [Parameter()]
@@ -186,7 +232,7 @@ if ($help.IsPresent) {
         Write-Host "ERROR: source folder does not contain participants.csv!" -ForegroundColor DarkRed
         return
     }
-
+    # Create if not present
     if (!(test-path .\$TgtFolder))
     {
         # Create sheets folder if not existent and hide console output

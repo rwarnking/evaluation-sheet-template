@@ -34,12 +34,11 @@ There you can also find information about the syntax of the different files.
 To use the template and generate a evaluation sheet yourself you need a LaTeX distribution
 e.g. [TeX Live](https://www.tug.org/texlive/) and the required packages.
 
-<!--
+
 Alternativly you can use one of the install scripts
 ([bash](https://github.com/rwarnking/evaluation-sheet-template/blob/main/install.sh) |
 [powershell](https://github.com/rwarnking/evaluation-sheet-template/blob/main/install.ps1))
 to install all dependencies automatically.
--->
 
 ### Dependencies
 
@@ -65,7 +64,16 @@ These packages are also needed but should usually be installed by default:
 
 ## Usage
 
-Simply compile the `.tex` file to PDF.
+Simply compile the `evaluation-sheet.tex` file to PDF.
+
+If you want to compile multiple sheets at once you can use the compile script:
+[bash](https://github.com/rwarnking/evaluation-sheet-template/blob/main/compile_all.sh) |
+[powershell](https://github.com/rwarnking/evaluation-sheet-template/blob/main/compile_all.ps1)
+
+These expect a source folder in which the sheet information is saved.
+After executing the command, the script tries to automatically compile all found sheets to
+the corresponding PDFs. It is also possible to specify the tutor-id for which to compile
+the sheets. For more information run `.\compile_all.[sh|ps1] -help`
 
 ## Contributing
 
