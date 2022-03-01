@@ -135,7 +135,6 @@ function New-Sheets {
 
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.management/set-content?view=powershell-7.2
 # https://stackoverflow.com/questions/50044959/get-a-line-number-on-powershell
-# Only replace the last occurance of pattern to keep the unused entries
 <#
 .SYNOPSIS
 Edits the $TexName file.
