@@ -32,6 +32,40 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\documentclass{article}
+
+%%%%%%%%%%%%
+% Packages %
+%%%%%%%%%%%%
+\usepackage[utf8]{inputenc}
+\usepackage[margin=0.5cm]{geometry}
+\usepackage{array, tabularx}
+\usepackage[dvipsnames, table]{xcolor}
+
+% For \xintFor and similar
+\usepackage{xinttools}
+% For \xintifCmp and similar
+\usepackage{xintfrac}
+% For \forloop
+\usepackage{forloop}
+%
+\usepackage{calc}
+% For \pgfmathresult
+\usepackage{tikz}
+
+% For loading the .csv files as database
+\usepackage{datatool}
+% Clip the informations to fit inside the table cells
+\usepackage{trimclip}
+
+% Optional
+% Used to reduce distance between items in itemize (\setlist)
+\usepackage{enumitem}
+% Used for displaying code inside the assignments (used for \lstset)
+\usepackage{listings}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select or add a course name
 \def\coursename{example-coursename-1}
@@ -172,73 +206,41 @@
 % Determine which information rows should be used for the header.
 % Each row can be disabled.
 % @param upperbound The max column number of the current page
+\newcounter{tmpcounter}
 \newcommand{\printheader}[1]{%
-    \ifthenelse{\equal{\showname}{\enable}}%
+    % TODO unterschiede small and big tasks
+    \xintifEq{\pdflanguage}{\english}%
     {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Assignment} & \textbf{Pts}%
-        } {%
-            \textbf{Aufgabe} & \textbf{Pkt}%
-        }%
-        \printtablerow{#1}{\printnames}\\ \hline%
-    }{}%
+        \textbf{Assignment}
+    } {%
+        \textbf{Aufgabe}
+    }%
+    & TODO%
+    % TODO add missing columns
+    % \forloop{tmpcounter}{2}{\value{tmpcounter} < #1}{
+    % }
     %
-    \ifthenelse{\equal{\showstudy}{\enable}}%
+    \DTLforeach*{assignments_db} % database label
+    {\curtask=\taskidKey, \curtitle=\titleKey,
+        \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Field of study} &%
-        } {%
-            \textbf{Studienfach} &%
-        }%
-        \printtablerow{#1}{\printstudy}\\ \hline%
-    }{}%
+        & \rotatebox[origin=c]{90}{\curtitle}
+    }\\ \thickhline
     %
-    \ifthenelse{\equal{\showpersonid}{\enable}}%
+    \xintifEq{\pdflanguage}{\english}%
     {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Person ID} &%
-        } {%
-            \textbf{Matrikelnummer} &%
-        }%
-        \printtablerow{#1}{\printpersonid}\\ \hline%
-    }{}%
+        \textbf{Points}
+    } {%
+        \textbf{Punkte}
+    }%
+    & TODO%
     %
-    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+    \DTLforeach*{assignments_db} % database label
+    {\curtask=\taskidKey, \curtitle=\titleKey,
+        \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Tutorgroup ID} &%
-        } {%
-            \textbf{Tutor-Gruppennummer} &%
-        }%
-        \printtablerow{#1}{\printtutorgroupid}\\ \hline%
-    }{}%
-    %
-    \ifthenelse{\equal{\showgroupid}{\enable}}%
-    {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Group ID} &%
-        } {%
-            \textbf{Gruppennummer} &%
-        }%
-        \printtablerow{#1}{\printgroupid}\\ \hline%
-    }{}%
-    %
-    \ifthenelse{\equal{\showdate}{\enable}}%
-    {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{Day \& Time} &%
-        } {%
-            \textbf{Tag \& Uhrzeit} &%
-        }%
-        \printtablerow{#1}{\printdate}\\ \hline%
-    }{}%
-    \thickhline%
+        & \curpoints
+    }\\ \thickhline
 }
 
 \newcounter{itergroups}
@@ -350,6 +352,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add task rows
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
 % Prints the task information and the points of the task as two columns.
 % Afterwards adds the point information for the task if enabled
 % @param the tasktitle
@@ -357,9 +360,12 @@
 % @param the points of the task
 % @param the task index (row)
 % @param the max group index
-\newcommand{\createtask}[5]{%
-    \textbf{#1} #2 & \textbf{#3}%
-    \printtablerow{#5}{\printpoints{#4}}%
+\newcommand{\creategroup}[1]{%
+    \printnames & TODO%
+    \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{tmpcol}}{
+        &
+    }\\ \hline
+    % \printtablerow{#5}{\printpoints{#4}}%
 }
 
 % Prints the subtask information and the points of the subtask as two columns.
@@ -532,6 +538,12 @@
     \newcounter{allcol}
     \setcounter{allcol}{\columnsMO}
 
+    \newcounter{groupinfoCol}
+    \setcounter{groupinfoCol}{1}
+
+    \newcounter{tmpcol}
+    \setcounter{tmpcol}{-1}
+
     % Calculate the total number of groups
     \DTLforeach*{groups_db} % database label
     {\curtutorid=\tutoridKey}
@@ -540,6 +552,12 @@
         {%
             \addtocounter{allcol}{1}
         }{}
+    }
+
+    \DTLforeach*{assignments_db} % database label
+    {}
+    {
+        \addtocounter{tmpcol}{1}
     }
 
     % Variable to identify the table currently processed
@@ -562,41 +580,61 @@
         \vspace{-1.0cm}
     \fi
 
+    % \newcounter{tmpcounter}
+
     % Iterate all tables
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
 
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
-        \begin{tabularx}{\textwidth}{ L;r;L*{\columnsMO}{|L} }
-            \printheader{\arabic{upperbound}}
-            %
-            \DTLforeach*{assignments_db} % database label
-            {\curtask=\taskidKey, \curtitle=\titleKey,
-                \curpoints=\pointsKey, \curdesc=\descriptionKey}
+        \begin{tabularx}{\textwidth}{ *{2}{L;}c*{\value{tmpcol}}{|c} }
+
+            \printheader{\value{groupinfoCol}}
+
+            \DTLforeach*{groups_db} % database label
+            {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
+                \curparticipants=\participantsKey, \lastsheet=\activeKey}%
             {%
-                % Create a thickline in front of a full assignment
-                % and a normal line in front of subassignments
-                \if\IsPositive{\curtask}%
-                    \ifnum\curtask>1%
-                        \\ \thickhline%
-                    \fi%
-                    \createtask
-                        {\curtitle}
-                        {\curdesc}
-                        {\curpoints}
-                        {\curtask}
-                        {\arabic{upperbound}}
-                \else
-                    \\ \hline%
-                    \createsubtask
-                        {\curdesc}
-                        {\curpoints}
-                        {\curtask}
-                        {\arabic{upperbound}}
-                \fi
-            }
-            \sumrow{\arabic{upperbound}}
+                \xintifEq{\curtutorid}{\tutornumber}%
+                {%
+                    \creategroup
+                        {\curparticipants}
+                }{}%
+            }%
+
+            % \forloop{tablenumber}{0}{\value{tablenumber} < \value{tmpcol}}{
+            %     hi &
+            % }
+            % hi
+            % \printheader{\arabic{upperbound}}
+            %
+            % \DTLforeach*{assignments_db} % database label
+            % {\curtask=\taskidKey, \curtitle=\titleKey,
+            %     \curpoints=\pointsKey, \curdesc=\descriptionKey}
+            % {%
+            %     % Create a thickline in front of a full assignment
+            %     % and a normal line in front of subassignments
+            %     \if\IsPositive{\curtask}%
+            %         \ifnum\curtask>1%
+            %             \\ \thickhline%
+            %         \fi%
+            %         \createtask
+            %             {\curtitle}
+            %             {\curdesc}
+            %             {\curpoints}
+            %             {\curtask}
+            %             {\arabic{upperbound}}
+            %     \else
+            %         \\ \hline%
+            %         \createsubtask
+            %             {\curdesc}
+            %             {\curpoints}
+            %             {\curtask}
+            %             {\arabic{upperbound}}
+            %     \fi
+            % }
+            % \sumrow{\arabic{upperbound}}
         \end{tabularx}
         \clearpage
     }
