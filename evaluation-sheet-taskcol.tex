@@ -92,7 +92,7 @@
 \newcommand{\showname}{\enable}
 \newcommand{\showstudy}{\disable}
 \newcommand{\showpersonid}{\disable}
-\newcommand{\showtutorgroupid}{\disable}
+\newcommand{\showtutorgroupid}{\enable}
 \newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\disable}
 % Enable or disable showing points
@@ -182,6 +182,7 @@
 \makeatother
 % https://tex.stackexchange.com/questions/12703/
 \newcolumntype{L}{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}X}
+\newcolumntype{C}{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}X}
 
 % Test if text is a number
 % This is used to differentiate between "1" and "1a"
@@ -206,9 +207,7 @@
 % Determine which information rows should be used for the header.
 % Each row can be disabled.
 % @param upperbound The max column number of the current page
-\newcounter{tmpcounter}
 \newcommand{\printheader}[1]{%
-
     % TODO if the name column is deactivated there is one ampersand left over
     \ifthenelse{\equal{\showname}{\enable}}%
     {%
@@ -282,7 +281,7 @@
     } {%
         & \rotatebox[origin=c]{90}{\textbf{Sum}}
     }%
-    \\ \thickhline
+    \\ \hline
     %
     \ifthenelse{\equal{\showname}{\enable}}%
     {%
@@ -351,43 +350,95 @@
         & \curpoints
     }%
     & \arabic{complsum}%
-    \\ \thickhline
+    %\\ \thickhline%
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Add groups
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO
+% Prints the task information and the points of the task as two columns.
+% Afterwards adds the point information for the task if enabled
+% @param the tasktitle
+% @param the taskdescription
+% @param the points of the task
+% @param the task index (row)
+% @param the max group index
+\newcounter{personnum}
+\newcounter{y}
+\newcounter{tmpcounter}
 \newcounter{itergroups}
-% Generic function that prints all values of a row.
-% For this all groups are iterated. Furthermore a lower and upper bound
-% are defined to print only the groups of the current page.
-% @param upperbound The max column number of the current page
-% @param content The content of the currently processed row/cell (can be a function)
-\newcommand{\printtablerow}[2]{%
-    \setcounter{itergroups}{0}
-    % Add values by iterating all groups and use the participant-id to
-    % get the value for each participant from the participant-database
-    \DTLforeach*{groups_db} % database label
-    {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
-        \curparticipants=\participantsKey, \lastsheet=\activeKey}%
-    {%
-        \xintifEq{\curtutorid}{\tutornumber}%
-        {%
-            % Check bounds
-            % Check if the iteration variable is smaller than #1 (upperbound)
-            \xintifCmp{#1}{\value{itergroups}}{}{}%
+\setcounter{itergroups}{0}%
+\newcounter{first}
+\newcommand{\creategroup}[1]{%
+    \setcounter{personnum}{1}%
+    \addtocounter{itergroups}{1}%
+    \setcounter{first}{\enable}%
+    %
+    \xintFor ##1 in \curparticipants \do {%
+        \foreach \n [count=\nn] in \lastsheet {%
+            \xintifEq{\nn}{\value{personnum}}%
             {%
-                % Check if the iteration variable is above #1 - 5 (lowerbound)
-                \xintifCmp{\value{itergroups}}{#1-\columnsPO}{}{}%
-                {% Ad content (can be a function)
-                    &
-                    #2
-                }%
-            }%
-            \addtocounter{itergroups}{1}%
-        }{}%
+                \setcounter{y}{\n}%
+            }{}%
+        }%
+        \addtocounter{personnum}{1}%
+        %
+        % TODO allow to hide/show names, allow to remove row completely
+        % TODO not yet active member also get a row even though they should not
+        \ifthenelse{\equal{\value{first}}{\enable}}%
+        {%
+            \setcounter{first}{\disable}%
+            \\\hline%
+        }{%
+            % TODO allow to select thinline
+            \\%
+        }%
+        \isactive{%
+            \ifthenelse{\equal{\showname}{\enable}}%
+            {%
+                \printnames{##1}%
+                &%
+            }{}%
+            \ifthenelse{\equal{\showstudy}{\enable}}%
+            {%
+                \printstudy{##1}
+                &%
+            }{}%
+            \ifthenelse{\equal{\showpersonid}{\enable}}%
+            {%
+                \printpersonid{##1}
+                &%
+            }{}%
+            \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+            {%
+                \printtutorgroupid
+                &%
+            }{}%
+            \ifthenelse{\equal{\showgroupid}{\enable}}%
+            {%
+                \printgroupid
+                &%
+            }{}%
+            \ifthenelse{\equal{\showdate}{\enable}}%
+            {%
+                \printdate
+                &%
+            }{}%
+        }%
+        % Add missing ampersands
+        \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
+            \addtocounter{tmpcounter}{2}%
+            \printpoints{\value{tmpcounter}}%
+            \addtocounter{tmpcounter}{-2}%
+            &%
+        }%
+        \printpointsum%
     }%
-    % Add missing "and"s
-    \forloop{itergroups}{\value{itergroups}}{\value{itergroups} < #1}{
-        &
-    }
+    % \xintifGt{\value{active}}{0}%
+    % {%
+    %     \\\hline%
+    % }{}
 }
 
 % Check if a participant is active by comparing its entry sheet to the current sheetnumber
@@ -430,9 +481,7 @@
 
 % Print the tutor group id
 \newcommand{\printtutorgroupid}{%
-    \addtocounter{itergroups}{1}%
     \arabic{itergroups}%
-    \addtocounter{itergroups}{-1}%
 }
 
 % Print the group id
@@ -446,93 +495,8 @@
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Add task rows
+% Print Points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO
-% Prints the task information and the points of the task as two columns.
-% Afterwards adds the point information for the task if enabled
-% @param the tasktitle
-% @param the taskdescription
-% @param the points of the task
-% @param the task index (row)
-% @param the max group index
-\newcounter{personnum}
-\newcounter{y}
-\newcounter{active}
-\newcommand{\creategroup}[1]{%
-    \setcounter{personnum}{1}%
-    \setcounter{active}{0}%
-    %
-    \xintFor ##1 in \curparticipants \do {%
-        \foreach \n [count=\nn] in \lastsheet {%
-            \xintifEq{\nn}{\value{personnum}}%
-            {%
-                \setcounter{y}{\n}%
-            }{}%
-        }%
-        \addtocounter{personnum}{1}%
-        %
-        % \isactive{%
-            \setcounter{active}{1}
-            \ifthenelse{\equal{\showname}{\enable}}%
-            {%
-                \printnames{##1}%
-                &%
-            }{}%
-            \ifthenelse{\equal{\showstudy}{\enable}}%
-            {%
-                \printstudy{##1}
-                &%
-            }{}%
-            \ifthenelse{\equal{\showpersonid}{\enable}}%
-            {%
-                \printpersonid{##1}
-                &%
-            }{}%
-            \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
-            {%
-                \printtutorgroupid
-                &%
-            }{}%
-            \ifthenelse{\equal{\showgroupid}{\enable}}%
-            {%
-                \printgroupid
-                &%
-            }{}%
-            \ifthenelse{\equal{\showdate}{\enable}}%
-            {%
-                \printdate
-                &%
-            }{}%
-            % Add missing ampersands
-            \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
-                \addtocounter{tmpcounter}{2}%
-                \printpoints{\value{tmpcounter}}%
-                \addtocounter{tmpcounter}{-2}%
-                &%
-            }%
-            \printpointsum%
-            % \printpoints{\value{tmpcounter}}%
-            \\\hline%
-        % }%
-    }%
-    % \xintifGt{\value{active}}{0}%
-    % {%
-    %     \\\hline%
-    % }{}
-}
-
-% Prints the subtask information and the points of the subtask as two columns.
-% Afterwards adds the point information for the subtask if enabled
-% @param the taskdescription
-% @param the points of the subtask
-% @param the subtask index (row)
-% @param the max group index
-\newcommand{\createsubtask}[4]{%
-    \small #1 & #2%
-    \printtablerow{#4}{\printpoints{#3}}%
-}
-
 % Checks if a group has no active members for this sheet.
 % If this is the case the column is disabled and colored as disabled.
 % The check is done by iterating all members and checking their entry date against the current
@@ -587,9 +551,6 @@
     }%
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Print Sum Row
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate the pointsum for the complete sheet (all full assignments) (Is done at startup)
 \newcounter{complsum}
 \setcounter{complsum}{0}
@@ -601,31 +562,12 @@
     \fi
 }
 
-% Add the cells to the sum row.
-% Also add point information if enabled by summing the task points.
-% @param maxGroup The max group index
-\newcommand{\sumrow}[1]{%
-    % Add missing thickline before sumrow
-    \\ \thickhline
-    \xintifEq{\pdflanguage}{\english}%
-    {%
-        \textbf{Sum:} &
-        \arabic{complsum}%
-        \printtablerow{#1}{\printpointsum{}}\\%
-    } {%
-        \textbf{Summe:} &
-        \arabic{complsum}%
-        \printtablerow{#1}{\printpointsum{}}\\%
-    }%
-}
-
 % Counter for the pointsum
 \newcounter{pointsum}
 % Print the current pointsum and color the cell depending on
 % the relation to the max points possible.
 % Expects \lastsheet and \curgroupid to be defined.
 \newcommand{\printpointsum}{%
-
     % Set group as dead from the beginning
     \setcounter{deadgroup}{\enable}%
     % Iterate the sheets at which each member joined or dropped out
@@ -693,6 +635,9 @@
     }%
 }
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Preprocessing
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \newcommand{\getcolumcount}{%
     \newcounter{infocols}
     \setcounter{infocols}{0}
@@ -774,9 +719,8 @@
         \vspace{-1.0cm}
     \fi
 
-    % \newcounter{tmpcounter}
-
     % Iterate all tables
+    % TODO multipage when having to many participants
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
@@ -791,7 +735,7 @@
             *{\showgroupid}{r|}
             *{\showdate}{r}
             ;
-            *{\value{asigncol}}{c|}c
+            *{\value{asigncol}}{C|}C
         }%
             \printheader{\value{groupinfoCol}}
             %
@@ -804,38 +748,6 @@
                     \creategroup{\curparticipants}%
                 }{}%
             }%
-            % \forloop{tablenumber}{0}{\value{tablenumber} < \value{tmpcol}}{
-            %     hi &
-            % }
-            % hi
-            % \printheader{\arabic{upperbound}}
-            %
-            % \DTLforeach*{assignments_db} % database label
-            % {\curtask=\taskidKey, \curtitle=\titleKey,
-            %     \curpoints=\pointsKey, \curdesc=\descriptionKey}
-            % {%
-            %     % Create a thickline in front of a full assignment
-            %     % and a normal line in front of subassignments
-            %     \if\IsPositive{\curtask}%
-            %         \ifnum\curtask>1%
-            %             \\ \thickhline%
-            %         \fi%
-            %         \createtask
-            %             {\curtitle}
-            %             {\curdesc}
-            %             {\curpoints}
-            %             {\curtask}
-            %             {\arabic{upperbound}}
-            %     \else
-            %         \\ \hline%
-            %         \createsubtask
-            %             {\curdesc}
-            %             {\curpoints}
-            %             {\curtask}
-            %             {\arabic{upperbound}}
-            %     \fi
-            % }
-            % \sumrow{\arabic{upperbound}}
         \end{tabularx}
         \clearpage
     }
