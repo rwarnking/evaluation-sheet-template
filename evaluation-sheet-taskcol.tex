@@ -91,9 +91,9 @@
 % Enable or disable different rows of information
 \newcommand{\showname}{\enable}
 \newcommand{\showstudy}{\enable}
-\newcommand{\showpersonid}{\disable}
-\newcommand{\showtutorgroupid}{\disable}
-\newcommand{\showgroupid}{\disable}
+\newcommand{\showpersonid}{\enable}
+\newcommand{\showtutorgroupid}{\enable}
+\newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\enable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
@@ -208,18 +208,69 @@
 % @param upperbound The max column number of the current page
 \newcounter{tmpcounter}
 \newcommand{\printheader}[1]{%
-    % TODO unterschiede small and big tasks
-    \xintifEq{\pdflanguage}{\english}%
+
+    % TODO if the name column is deactivated there is one ampersand left over
+    \ifthenelse{\equal{\showname}{\enable}}%
     {%
-        \textbf{Assignment}
-    } {%
-        \textbf{Aufgabe}
-    }%
-    & TODO%
-    % TODO add missing columns
-    % \forloop{tmpcounter}{2}{\value{tmpcounter} < #1}{
-    % }
-    %
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TODO}
+        } {%
+            \textbf{TODO}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showstudy}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TODO}
+        } {%
+            \textbf{TODO}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showpersonid}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TD}
+        } {%
+            \textbf{TD}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{T}
+        } {%
+            \textbf{T}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showgroupid}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{T}
+        } {%
+            \textbf{T}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showdate}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TODO}
+        } {%
+            \textbf{TODO}
+        }%
+    }{}%
+
+    % TODO unterschiede small and big tasks
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
@@ -227,13 +278,65 @@
         & \rotatebox[origin=c]{90}{\curtitle}
     }\\ \thickhline
     %
-    \xintifEq{\pdflanguage}{\english}%
+    \ifthenelse{\equal{\showname}{\enable}}%
     {%
-        \textbf{Points}
-    } {%
-        \textbf{Punkte}
-    }%
-    & TODO%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TODO}
+        } {%
+            \textbf{TODO}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showstudy}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TODO}
+        } {%
+            \textbf{TODO}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showpersonid}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TD}
+        } {%
+            \textbf{TD}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{T}
+        } {%
+            \textbf{T}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showgroupid}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{T}
+        } {%
+            \textbf{T}
+        }%
+    }{}%
+    \ifthenelse{\equal{\showdate}{\enable}}%
+    {%
+        &%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{TODO}
+        } {%
+            \textbf{TODO}
+        }%
+    }{}%
     %
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
@@ -284,12 +387,12 @@
 % @param content The value that should be printed if the participant is active
 \newcommand{\isactive}[1]{%
     % If the person is not yet in the group
-    \xintifLt{\sheetnumber}{\y}%
+    \xintifLt{\sheetnumber}{\value{y}}%
     {}{%
         % If the person left the group
-        \xintifLt{\y}{0}%
+        \xintifLt{\value{y}}{0}%
         {%
-            \xintifGt{\sheetnumber*-1}{\y}%
+            \xintifGt{\sheetnumber*-1}{\value{y}}%
             {#1}{}%
         }{#1}%
     }%
@@ -298,38 +401,23 @@
 % Iterate and print all participant names given.
 % Each in his own line. The participants should be the members of one group.
 % Needs \curparticipants to be defined
-\newcommand{\printnames}{%
-    % https://tex.stackexchange.com/questions/193846/foreach-loop-between-two-lists
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
-        \isactive{%
-            \clipstring[\linewidth]{%
-                \DTLfetch{participants_db}{\personidKey}{\n}{\firstnameKey}
-                \DTLfetch{participants_db}{\personidKey}{\n}{\lastnameKey}%
-            }\hfill%
-        }%
-    }%
+\newcommand{\printnames}[1]{%
+    \DTLfetch{participants_db}{\personidKey}{#1}{\firstnameKey} %
+    \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}%
 }
 
 % Iterate and print the study fields of the participants given.
 % The participants should be the members of one group.
 % Needs \curparticipants to be defined
-\newcommand{\printstudy}{%
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
-        \isactive{%
-            \clipstring[\linewidth]{%
-                \DTLfetch{participants_db}{\personidKey}{\n}{\studyfieldKey}%
-            }\hfill%
-        }%
-    }%
+\newcommand{\printstudy}[1]{%
+    \DTLfetch{participants_db}{\personidKey}{#1}{\studyfieldKey}%
 }
 
 % Iterate and print the identification numbers of the participants given.
 % The participants should be the members of one group.
 % Needs \curparticipants to be defined
-\newcommand{\printpersonid}{%
-    \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
-        \isactive{\n{}, }%
-    }%
+\newcommand{\printpersonid}[1]{%
+    #1
 }
 
 % Print the tutor group id
@@ -360,12 +448,65 @@
 % @param the points of the task
 % @param the task index (row)
 % @param the max group index
+\newcounter{personnum}
+\newcounter{y}
+\newcounter{active}
 \newcommand{\creategroup}[1]{%
-    \printnames & TODO%
-    \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{tmpcol}}{
-        &
-    }\\ \hline
-    % \printtablerow{#5}{\printpoints{#4}}%
+    \setcounter{personnum}{1}%
+    \setcounter{active}{0}%
+    %
+    \xintFor ##1 in \curparticipants \do {%
+        \foreach \n [count=\nn] in \lastsheet {%
+            \xintifEq{\nn}{\value{personnum}}%
+            {%
+                \setcounter{y}{\n}%
+            }{}%
+        }%
+        \addtocounter{personnum}{1}%
+        %
+        % \isactive{%
+            \setcounter{active}{1}
+            \ifthenelse{\equal{\showname}{\enable}}%
+            {%
+                \printnames{##1}%
+                &%
+            }{}%
+            \ifthenelse{\equal{\showstudy}{\enable}}%
+            {%
+                \printstudy{##1}
+                &%
+            }{}%
+            \ifthenelse{\equal{\showpersonid}{\enable}}%
+            {%
+                \printpersonid{##1}
+                &%
+            }{}%
+            \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+            {%
+                \printtutorgroupid
+                &%
+            }{}%
+            \ifthenelse{\equal{\showgroupid}{\enable}}%
+            {%
+                \printgroupid
+                &%
+            }{}%
+            \ifthenelse{\equal{\showdate}{\enable}}%
+            {%
+                \printdate
+                &%
+            }{}%
+            % Add missing ampersands
+            \forloop{tmpcounter}{4}{\value{tmpcounter} < \value{tmpcol}}{%
+                &%
+            }
+            \\\hline%
+        % }%
+    }%
+    % \xintifGt{\value{active}}{0}%
+    % {%
+    %     \\\hline%
+    % }{}
 }
 
 % Prints the subtask information and the points of the subtask as two columns.
@@ -531,6 +672,36 @@
     }%
 }
 
+\newcommand{\getcolumcount}{%
+    \newcounter{infocols}
+    \setcounter{infocols}{0}
+
+    \ifthenelse{\equal{\showname}{\enable}}%
+    {%
+        \addtocounter{infocols}{1}
+    }{}%
+    \ifthenelse{\equal{\showstudy}{\enable}}%
+    {%
+        \addtocounter{infocols}{1}
+    }{}%
+    \ifthenelse{\equal{\showpersonid}{\enable}}%
+    {%
+        \addtocounter{infocols}{1}
+    }{}%
+    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+    {%
+        \addtocounter{infocols}{1}
+    }{}%
+    \ifthenelse{\equal{\showgroupid}{\enable}}%
+    {%
+        \addtocounter{infocols}{1}
+    }{}%
+    \ifthenelse{\equal{\showdate}{\enable}}%
+    {%
+        \addtocounter{infocols}{1}
+    }{}%
+}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Begin document
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -539,7 +710,7 @@
     \setcounter{allcol}{\columnsMO}
 
     \newcounter{groupinfoCol}
-    \setcounter{groupinfoCol}{1}
+    \setcounter{groupinfoCol}{2}
 
     \newcounter{tmpcol}
     \setcounter{tmpcol}{-1}
@@ -586,23 +757,30 @@
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
-
+        %
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
-        \begin{tabularx}{\textwidth}{ *{2}{L;}c*{\value{tmpcol}}{|c} }
-
+        % \begin{tabularx}{\textwidth}{ *{\value{infocols}}{l};c*{\value{tmpcol}}{|c} }
+        \begin{tabularx}{\textwidth}{
+            *{\showname}{l|}
+            *{\showstudy}{l|}
+            *{\showpersonid}{r|}
+            *{\showtutorgroupid}{r|}
+            *{\showgroupid}{r|}
+            *{\showdate}{r}
+            ;
+            c*{\value{tmpcol}}{|c}
+        }%
             \printheader{\value{groupinfoCol}}
-
-            \DTLforeach*{groups_db} % database label
+            %
+            \DTLforeach*{groups_db}% database label
             {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
                 \curparticipants=\participantsKey, \lastsheet=\activeKey}%
             {%
                 \xintifEq{\curtutorid}{\tutornumber}%
                 {%
-                    \creategroup
-                        {\curparticipants}
+                    \creategroup{\curparticipants}%
                 }{}%
             }%
-
             % \forloop{tablenumber}{0}{\value{tablenumber} < \value{tmpcol}}{
             %     hi &
             % }
