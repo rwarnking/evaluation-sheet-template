@@ -91,10 +91,10 @@
 % Enable or disable different rows of information
 \newcommand{\showname}{\enable}
 \newcommand{\showstudy}{\enable}
-\newcommand{\showpersonid}{\enable}
-\newcommand{\showtutorgroupid}{\enable}
-\newcommand{\showgroupid}{\enable}
-\newcommand{\showdate}{\enable}
+\newcommand{\showpersonid}{\disable}
+\newcommand{\showtutorgroupid}{\disable}
+\newcommand{\showgroupid}{\disable}
+\newcommand{\showdate}{\disable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
 
@@ -497,7 +497,7 @@
                 &%
             }{}%
             % Add missing ampersands
-            \forloop{tmpcounter}{4}{\value{tmpcounter} < \value{tmpcol}}{%
+            \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
                 &%
             }
             \\\hline%
@@ -712,8 +712,10 @@
     \newcounter{groupinfoCol}
     \setcounter{groupinfoCol}{2}
 
-    \newcounter{tmpcol}
-    \setcounter{tmpcol}{-1}
+    \newcounter{asigncol}
+    \setcounter{asigncol}{-1}
+
+    \getcolumcount
 
     % Calculate the total number of groups
     \DTLforeach*{groups_db} % database label
@@ -728,7 +730,7 @@
     \DTLforeach*{assignments_db} % database label
     {}
     {
-        \addtocounter{tmpcol}{1}
+        \addtocounter{asigncol}{1}
     }
 
     % Variable to identify the table currently processed
@@ -759,7 +761,7 @@
         \setcounter{upperbound}{\pgfmathresult}
         %
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
-        % \begin{tabularx}{\textwidth}{ *{\value{infocols}}{l};c*{\value{tmpcol}}{|c} }
+        % TODO double vertical line when deactivating showdate
         \begin{tabularx}{\textwidth}{
             *{\showname}{l|}
             *{\showstudy}{l|}
@@ -768,7 +770,7 @@
             *{\showgroupid}{r|}
             *{\showdate}{r}
             ;
-            c*{\value{tmpcol}}{|c}
+            c*{\value{asigncol}}{|c}
         }%
             \printheader{\value{groupinfoCol}}
             %
