@@ -75,7 +75,7 @@
 % \def\semester{2018}
 
 % Select or add a sheet (with leading zero)
-\def\sheetnumber{01}
+\def\sheetnumber{02}
 
 % Select a teaching person
 \def\tutornumber{1}
@@ -90,10 +90,10 @@
 \newcommand{\enable}{1}
 % Enable or disable different rows of information
 \newcommand{\showname}{\enable}
-\newcommand{\showstudy}{\enable}
+\newcommand{\showstudy}{\disable}
 \newcommand{\showpersonid}{\disable}
 \newcommand{\showtutorgroupid}{\disable}
-\newcommand{\showgroupid}{\disable}
+\newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\disable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
@@ -269,14 +269,20 @@
             \textbf{TODO}
         }%
     }{}%
-
     % TODO unterschiede small and big tasks
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
         & \rotatebox[origin=c]{90}{\curtitle}
-    }\\ \thickhline
+    }%
+    \xintifEq{\pdflanguage}{\english}%
+    {%
+        & \rotatebox[origin=c]{90}{\textbf{Sum}}
+    } {%
+        & \rotatebox[origin=c]{90}{\textbf{Sum}}
+    }%
+    \\ \thickhline
     %
     \ifthenelse{\equal{\showname}{\enable}}%
     {%
@@ -343,7 +349,9 @@
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
         & \curpoints
-    }\\ \thickhline
+    }%
+    & \arabic{complsum}%
+    \\ \thickhline
 }
 
 \newcounter{itergroups}
@@ -498,8 +506,13 @@
             }{}%
             % Add missing ampersands
             \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
+                \addtocounter{tmpcounter}{2}%
+                \printpoints{\value{tmpcounter}}%
+                \addtocounter{tmpcounter}{-2}%
                 &%
-            }
+            }%
+            \printpointsum%
+            % \printpoints{\value{tmpcounter}}%
             \\\hline%
         % }%
     }%
@@ -561,7 +574,15 @@
         \xintifEq{\showpoints}{\enable}%
         {%
             % Get point value of this group for the given task
-            \DTLfetch{points_db}{\groupidKey}{\curgroupid}{#1}%
+            % \DTLfetch{points_db}{\groupidKey}{\curgroupid}{#1}%
+            \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
+            % Use this instead of DTLgetrowindex to expand the argument
+            \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
+            \DTLgetvalue{\taskpoints}%
+            {points_db}%
+            {\grouprow}%
+            {#1}%
+            \taskpoints%
         }{}%
     }%
 }
@@ -713,7 +734,7 @@
     \setcounter{groupinfoCol}{2}
 
     \newcounter{asigncol}
-    \setcounter{asigncol}{-1}
+    \setcounter{asigncol}{0}
 
     \getcolumcount
 
@@ -770,7 +791,7 @@
             *{\showgroupid}{r|}
             *{\showdate}{r}
             ;
-            c*{\value{asigncol}}{|c}
+            *{\value{asigncol}}{c|}c
         }%
             \printheader{\value{groupinfoCol}}
             %
