@@ -210,149 +210,66 @@
 % Each row can be disabled.
 % @param upperbound The max column number of the current page
 \newcommand{\printheader}[1]{%
-    % TODO if the name column is deactivated there is one ampersand left over
-    \ifthenelse{\equal{\showname}{\enable}}%
-    {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TODO}
-        } {%
-            \textbf{TODO}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showstudy}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TODO}
-        } {%
-            \textbf{TODO}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showpersonid}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TD}
-        } {%
-            \textbf{TD}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{T}
-        } {%
-            \textbf{T}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showgroupid}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{T}
-        } {%
-            \textbf{T}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showdate}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TODO}
-        } {%
-            \textbf{TODO}
-        }%
-    }{}%
+    \setcounter{first}{\enable}%
+    \printheadercell{\showname}{TODO}{TODO}%
+    \printheadercell{\showstudy}{TODO}{TODO}%
+    \printheadercell{\showpersonid}{TD}{TD}%
+    \printheadercell{\showtutorgroupid}{T}{T}%
+    \printheadercell{\showgroupid}{T}{T}%
+    \printheadercell{\showdate}{TODO}{TODO}%
     % TODO unterschiede small and big tasks
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
-        & \rotatebox[origin=c]{90}{\curtitle}
+        \checkfirstampersand%
+        \rotatebox[origin=c]{90}{\curtitle}
     }%
+    \checkfirstampersand%
     \xintifEq{\pdflanguage}{\english}%
     {%
-        & \rotatebox[origin=c]{90}{\textbf{Sum}}
+        \rotatebox[origin=c]{90}{\textbf{Sum}}
     } {%
-        & \rotatebox[origin=c]{90}{\textbf{Sum}}
+        \rotatebox[origin=c]{90}{\textbf{Sum}}
     }%
     \\ \hline
     %
-    \ifthenelse{\equal{\showname}{\enable}}%
-    {%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TODO}
-        } {%
-            \textbf{TODO}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showstudy}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TODO}
-        } {%
-            \textbf{TODO}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showpersonid}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TD}
-        } {%
-            \textbf{TD}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{T}
-        } {%
-            \textbf{T}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showgroupid}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{T}
-        } {%
-            \textbf{T}
-        }%
-    }{}%
-    \ifthenelse{\equal{\showdate}{\enable}}%
-    {%
-        &%
-        \xintifEq{\pdflanguage}{\english}%
-        {%
-            \textbf{TODO}
-        } {%
-            \textbf{TODO}
-        }%
-    }{}%
+    \setcounter{first}{\enable}%
+    \printheadercell{\showname}{TODO}{TODO}%
+    \printheadercell{\showstudy}{TODO}{TODO}%
+    \printheadercell{\showpersonid}{TD}{TD}%
+    \printheadercell{\showtutorgroupid}{T}{T}%
+    \printheadercell{\showgroupid}{T}{T}%
+    \printheadercell{\showdate}{TODO}{TODO}%
     %
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
-        & \curpoints
+        \checkfirstampersand%
+        \curpoints%
     }%
-    & \arabic{complsum}%
+    \checkfirstampersand%
+    \arabic{complsum}%
     %\\ \thickhline%
+}
+
+\newcommand{\printheadercell}[3]{%
+    \ifthenelse{\equal{#1}{\enable}}%
+    {%
+        \checkfirstampersand%
+        \xintifEq{\pdflanguage}{\english}%
+        {%
+            \textbf{#2}%
+        } {%
+            \textbf{#3}%
+        }%
+    }{}%
+}
+
+\newcommand{\checkfirstampersand}{%
+    \ifthenelse{\equal{\value{first}}{\enable}}%
+    {\setcounter{first}{\disable}}{&}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -433,7 +350,7 @@
         \\\hline%
     }{%
         % TODO allow to select thinline
-        \\%
+        \\ %
     }%
     %
     \ifthenelse{\equal{\showname}{\enable}}%
@@ -443,27 +360,27 @@
     }{}%
     \ifthenelse{\equal{\showstudy}{\enable}}%
     {%
-        \isactive{\printstudy{#1}}
+        \isactive{\printstudy{#1}}%
         &%
     }{}%
     \ifthenelse{\equal{\showpersonid}{\enable}}%
     {%
-        \isactive{\printpersonid{#1}}
+        \isactive{\printpersonid{#1}}%
         &%
     }{}%
     \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
     {%
-        \isactive{\printtutorgroupid}
+        \isactive{\printtutorgroupid}%
         &%
     }{}%
     \ifthenelse{\equal{\showgroupid}{\enable}}%
     {%
-        \isactive{\printgroupid}
+        \isactive{\printgroupid}%
         &%
     }{}%
     \ifthenelse{\equal{\showdate}{\enable}}%
     {%
-        \isactive{\printdate}
+        \isactive{\printdate}%
         &%
     }{}%
     % Add missing ampersands
@@ -487,8 +404,7 @@
         \xintifLt{\value{y}}{0}%
         {%
             \xintifGt{\sheetnumber*-1}{\value{y}}%
-            {#1}
-            {%
+            {#1}{%
                 % Allow to hide or show information of dead row
                 \ifthenelse{\equal{\showdeadinfo}{\enable}}%
                 {#1}{}%
@@ -516,7 +432,7 @@
 % The participants should be the members of one group.
 % Needs \curparticipants to be defined
 \newcommand{\printpersonid}[1]{%
-    #1
+    #1%
 }
 
 % Print the tutor group id
