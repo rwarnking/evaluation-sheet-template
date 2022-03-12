@@ -388,26 +388,25 @@
         %
         % Set row as dead in the beginning
         \setcounter{deadrow}{\enable}%
-        % Iterate the sheets at which each member joined or dropped out
+        % Check the sheet at which the current member joined or dropped out
         % Check if the member dropped out or joined
         \xintifLt{\value{y}}{0}%
         {%
             % Get absolute value and compare to current sheetnumber
             \xintifGt{\sheetnumber*-1}{\value{y}}%
-            % If the member did not yet drop out - the group is alive
+            % If the member did not yet drop out - the row is alive
             {\setcounter{deadrow}{\disable}}%
             % Otherwise the member is not part of the group for this sheet
-            {}% Do not change value since the group counts as dead from the start
+            {}% Do not change value since the row counts as dead from the start
         }{%
             % Compare to current sheetnumber
             \xintifLt{\sheetnumber}{\value{y}}%
             % The member is not part of the group for this sheet
-            {}% Do not change value since the group counts as dead from the start
-            % Otherwise the group is alive
+            {\setcounter{deadrow}{2}}% Mark row as not yet visible
+            % Otherwise the row is alive
             {\setcounter{deadrow}{\disable}}%
         }%
         %
-        % TODO not yet active member also get a row even though they should not
         % Check if dead rows should be visible or removed
         \ifthenelse{\equal{\value{deadrow}}{\enable}}%
         {%
@@ -416,8 +415,10 @@
                 \printrow{##1}%
             }{}%
         }{%
-            \printrow{##1}%
-        }
+            % Check if the participant is already active
+            \ifthenelse{\equal{\value{deadrow}}{2}}%
+            {}{\printrow{##1}}%
+        }%
     }%
     % \xintifGt{\value{active}}{0}%
     % {%
