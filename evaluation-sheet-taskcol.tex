@@ -97,6 +97,8 @@
 \newcommand{\showdate}{\disable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
+\newcommand{\showdeadinfo}{\disable}
+\newcommand{\showdeadrow}{\enable}
 
 % TODO automate
 \newcommand{\columns}{4}
@@ -370,7 +372,7 @@
 \newcounter{itergroups}
 \setcounter{itergroups}{0}%
 \newcounter{first}
-\newcommand{\creategroup}[1]{%
+\newcommand{\creategroup}{%
     \setcounter{personnum}{1}%
     \addtocounter{itergroups}{1}%
     \setcounter{first}{\enable}%
@@ -384,61 +386,93 @@
         }%
         \addtocounter{personnum}{1}%
         %
-        % TODO allow to hide/show names, allow to remove row completely
-        % TODO not yet active member also get a row even though they should not
-        \ifthenelse{\equal{\value{first}}{\enable}}%
+        % Set row as dead in the beginning
+        \setcounter{deadrow}{\enable}%
+        % Iterate the sheets at which each member joined or dropped out
+        % Check if the member dropped out or joined
+        \xintifLt{\value{y}}{0}%
         {%
-            \setcounter{first}{\disable}%
-            \\\hline%
+            % Get absolute value and compare to current sheetnumber
+            \xintifGt{\sheetnumber*-1}{\value{y}}%
+            % If the member did not yet drop out - the group is alive
+            {\setcounter{deadrow}{\disable}}%
+            % Otherwise the member is not part of the group for this sheet
+            {}% Do not change value since the group counts as dead from the start
         }{%
-            % TODO allow to select thinline
-            \\%
+            % Compare to current sheetnumber
+            \xintifLt{\sheetnumber}{\value{y}}%
+            % The member is not part of the group for this sheet
+            {}% Do not change value since the group counts as dead from the start
+            % Otherwise the group is alive
+            {\setcounter{deadrow}{\disable}}%
         }%
-        \isactive{%
-            \ifthenelse{\equal{\showname}{\enable}}%
+        %
+        % TODO not yet active member also get a row even though they should not
+        % Check if dead rows should be visible or removed
+        \ifthenelse{\equal{\value{deadrow}}{\enable}}%
+        {%
+            \ifthenelse{\equal{\showdeadrow}{\enable}}%
             {%
-                \printnames{##1}%
-                &%
+                \printrow{##1}%
             }{}%
-            \ifthenelse{\equal{\showstudy}{\enable}}%
-            {%
-                \printstudy{##1}
-                &%
-            }{}%
-            \ifthenelse{\equal{\showpersonid}{\enable}}%
-            {%
-                \printpersonid{##1}
-                &%
-            }{}%
-            \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
-            {%
-                \printtutorgroupid
-                &%
-            }{}%
-            \ifthenelse{\equal{\showgroupid}{\enable}}%
-            {%
-                \printgroupid
-                &%
-            }{}%
-            \ifthenelse{\equal{\showdate}{\enable}}%
-            {%
-                \printdate
-                &%
-            }{}%
-        }%
-        % Add missing ampersands
-        \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
-            \addtocounter{tmpcounter}{2}%
-            \printpoints{\value{tmpcounter}}%
-            \addtocounter{tmpcounter}{-2}%
-            &%
-        }%
-        \printpointsum%
+        }{%
+            \printrow{##1}%
+        }
     }%
     % \xintifGt{\value{active}}{0}%
     % {%
     %     \\\hline%
     % }{}
+}
+
+\newcommand{\printrow}[1]{%
+    \ifthenelse{\equal{\value{first}}{\enable}}%
+    {%
+        \setcounter{first}{\disable}%
+        \\\hline%
+    }{%
+        % TODO allow to select thinline
+        \\%
+    }%
+    %
+    \ifthenelse{\equal{\showname}{\enable}}%
+    {%
+        \isactive{\printnames{#1}}%
+        &%
+    }{}%
+    \ifthenelse{\equal{\showstudy}{\enable}}%
+    {%
+        \isactive{\printstudy{#1}}
+        &%
+    }{}%
+    \ifthenelse{\equal{\showpersonid}{\enable}}%
+    {%
+        \isactive{\printpersonid{#1}}
+        &%
+    }{}%
+    \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
+    {%
+        \isactive{\printtutorgroupid}
+        &%
+    }{}%
+    \ifthenelse{\equal{\showgroupid}{\enable}}%
+    {%
+        \isactive{\printgroupid}
+        &%
+    }{}%
+    \ifthenelse{\equal{\showdate}{\enable}}%
+    {%
+        \isactive{\printdate}
+        &%
+    }{}%
+    % Add missing ampersands
+    \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
+        \addtocounter{tmpcounter}{2}%
+        \printpoints{\value{tmpcounter}}%
+        \addtocounter{tmpcounter}{-2}%
+        &%
+    }%
+    \printpointsum%
 }
 
 % Check if a participant is active by comparing its entry sheet to the current sheetnumber
@@ -452,7 +486,12 @@
         \xintifLt{\value{y}}{0}%
         {%
             \xintifGt{\sheetnumber*-1}{\value{y}}%
-            {#1}{}%
+            {#1}
+            {%
+                % Allow to hide or show information of dead row
+                \ifthenelse{\equal{\showdeadinfo}{\enable}}%
+                {#1}{}%
+            }%
         }{#1}%
     }%
 }
@@ -503,33 +542,11 @@
 % sheet number.
 % Expects \lastsheet and \curgroupid to be defined.
 % @param taskId The index of the processed task.
+\newcounter{deadrow}
 \newcounter{deadgroup}
 \newcommand{\printpoints}[1]{%
-    % Set group as dead from the beginning
-    \setcounter{deadgroup}{\enable}%
-    % Iterate the sheets at which each member joined or dropped out
-    \foreach \n in \lastsheet {%
-        % Check if the member dropped out or joined
-        \xintifLt{\n}{0}%
-        {%
-            % Get absolute value and compare to current sheetnumber
-            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}%
-            % If the member did not yet drop out - the group is alive
-            {\setcounter{deadgroup}{\disable}}%
-            % Otherwise the member is not part of the group for this sheet
-            {}% Do not change value since the group counts as dead from the start
-        }{%
-            % Compare to current sheetnumber
-            \xintifLt{\sheetnumber}{\n}%
-            % The member is not part of the group for this sheet
-            {}% Do not change value since the group counts as dead from the start
-            % Otherwise the group is alive
-            {\setcounter{deadgroup}{\disable}}%
-        }%
-    }%
-    %
-    % If the counter equals \enable the group has no active members for this sheet
-    \xintifEq{\value{deadgroup}}{\enable}%
+    % If the row is dead then mark it as such, otherwise print the content
+    \xintifEq{\value{deadrow}}{\enable}%
     {%
         % Disable the cell
         \cellcolor{disabled}%
@@ -568,31 +585,8 @@
 % the relation to the max points possible.
 % Expects \lastsheet and \curgroupid to be defined.
 \newcommand{\printpointsum}{%
-    % Set group as dead from the beginning
-    \setcounter{deadgroup}{\enable}%
-    % Iterate the sheets at which each member joined or dropped out
-    \foreach \n in \lastsheet {%
-        % Check if the member dropped out or joined
-        \xintifLt{\n}{0}%
-        {%
-            % Get absolute value and compare to current sheetnumber
-            \xintifGt{\n*\n}{\sheetnumber*\sheetnumber}%
-            % If the member did not yet drop out - the group is alive
-            {\setcounter{deadgroup}{\disable}}%
-            % Otherwise the member is not part of the group for this sheet
-            {}% Do not change value since the group counts as dead from the start
-        }{%
-            % Compare to current sheetnumber
-            \xintifLt{\sheetnumber}{\n}%
-            % The member is not part of the group for this sheet
-            {}% Do not change value since the group counts as dead from the start
-            % Otherwise the group is alive
-            {\setcounter{deadgroup}{\disable}}%
-        }%
-    }%
-    %
-    % If the counter equals \enable the group has no active members for this sheet
-    \xintifEq{\value{deadgroup}}{\enable}%
+    % If the row is dead then mark it as such, otherwise print the content
+    \xintifEq{\value{deadrow}}{\enable}%
     {%
         % Disable the cell
         \cellcolor{disabled}%
@@ -745,7 +739,7 @@
             {%
                 \xintifEq{\curtutorid}{\tutornumber}%
                 {%
-                    \creategroup{\curparticipants}%
+                    \creategroup%
                 }{}%
             }%
         \end{tabularx}
