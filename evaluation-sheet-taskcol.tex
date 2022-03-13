@@ -180,7 +180,7 @@
     \noalign {\ifnum 0=`}\fi \hrule height 1pt
     \futurelet \reserved@a \@xhline
 }
-\newcolumntype{;}{@{\hskip\tabcolsep\vrule width 1pt\hskip\tabcolsep}}
+\newcolumntype{;}{@{\vrule width 1pt}|}
 \makeatother
 % https://tex.stackexchange.com/questions/12703/
 \newcolumntype{L}{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}X}
@@ -218,6 +218,8 @@
     \printheadercell{\showgroupid}{T}{T}%
     \printheadercell{\showdate}{TODO}{TODO}%
     % TODO unterschiede small and big tasks
+    % (not sure if possible - rotate box does not allow newlines,
+    % and long text would not be usefull anyway - maybe always use curtitle)
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
@@ -251,7 +253,7 @@
     }%
     \checkfirstampersand%
     \arabic{complsum}%
-    %\\ \thickhline%
+    \\ \thickhline%
 }
 
 \newcommand{\printheadercell}[3]{%
@@ -289,6 +291,8 @@
 \newcounter{itergroups}
 \setcounter{itergroups}{0}%
 \newcounter{first}
+\newcounter{firstgroup}
+\setcounter{firstgroup}{\enable}%
 \newcommand{\creategroup}{%
     \setcounter{personnum}{1}%
     \addtocounter{itergroups}{1}%
@@ -337,17 +341,15 @@
             {}{\printrow{##1}}%
         }%
     }%
-    % \xintifGt{\value{active}}{0}%
-    % {%
-    %     \\\hline%
-    % }{}
 }
 
 \newcommand{\printrow}[1]{%
     \ifthenelse{\equal{\value{first}}{\enable}}%
     {%
+        \ifthenelse{\equal{\value{firstgroup}}{\enable}}%
+        {}{\\\hline}%
         \setcounter{first}{\disable}%
-        \\\hline%
+        \setcounter{firstgroup}{\disable}%
     }{%
         % TODO allow to select thinline
         \\ %
@@ -631,20 +633,20 @@
     \fi
 
     % Iterate all tables
+    % TODO adjust font size to width of table
     % TODO multipage when having to many participants
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
         %
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
-        % TODO double vertical line when deactivating showdate
         \begin{tabularx}{\textwidth}{
             *{\showname}{l|}
             *{\showstudy}{l|}
             *{\showpersonid}{r|}
             *{\showtutorgroupid}{r|}
             *{\showgroupid}{r|}
-            *{\showdate}{r}
+            *{\showdate}{r|}
             ;
             *{\value{asigncol}}{C|}C
         }%
