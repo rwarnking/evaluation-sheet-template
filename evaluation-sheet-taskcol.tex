@@ -101,9 +101,9 @@
 \newcommand{\showdeadrow}{\enable}
 
 % TODO automate
-\newcommand{\columns}{4}
-\newcommand{\columnsMO}{3}
-\newcommand{\columnsPO}{5}
+\newcommand{\columns}{20}
+\newcommand{\columnsMO}{19}
+\newcommand{\columnsPO}{21}
 
 %%%%%%%%%%%%
 % Database %
@@ -209,7 +209,7 @@
 % Determine which information rows should be used for the header.
 % Each row can be disabled.
 % @param upperbound The max column number of the current page
-\newcommand{\printheader}[1]{%
+\newcommand{\printheader}{%
     \setcounter{first}{\enable}%
     \printheadercell{\showname}{TODO}{TODO}%
     \printheadercell{\showstudy}{TODO}{TODO}%
@@ -588,8 +588,9 @@
     \newcounter{allcol}
     \setcounter{allcol}{\columnsMO}
 
-    \newcounter{groupinfoCol}
-    \setcounter{groupinfoCol}{2}
+    \newcounter{lowerbound}
+    \newcounter{upperbound}
+    \newcounter{currow}
 
     \newcounter{asigncol}
     \setcounter{asigncol}{0}
@@ -617,7 +618,6 @@
     \newcounter{max}
     % Precalculate the current page number
     \setcounter{max}{\value{allcol}/\columns}
-    \newcounter{upperbound}
 
     % If no groups were found print a warning but still show assignments
     \ifnum\value{max}=0
@@ -635,9 +635,13 @@
     % Iterate all tables
     % TODO adjust font size to width of table
     % TODO multipage when having to many participants
+    % TODO do not use amount of groups but rather amount of participants
+    % to calculate pages
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
+        \pgfmathparse{int ((\value{tablenumber})*\columns)}
+        \setcounter{lowerbound}{\pgfmathresult}
         %
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
         \begin{tabularx}{\textwidth}{
@@ -650,16 +654,25 @@
             ;
             *{\value{asigncol}}{C|}C
         }%
-            \printheader{\value{groupinfoCol}}
+            \setcounter{currow}{0}
+            \printheader%
             %
             \DTLforeach*{groups_db}% database label
             {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
                 \curparticipants=\participantsKey, \lastsheet=\activeKey}%
             {%
-                \xintifEq{\curtutorid}{\tutornumber}%
+                \xintifGt{\value{currow}}{\value{lowerbound}}%
                 {%
-                    \creategroup%
+                    \xintifGt{\value{currow}}{\value{upperbound}}%
+                    {\setcounter{firstgroup}{\enable}}%
+                    {%
+                        \xintifEq{\curtutorid}{\tutornumber}%
+                        {%
+                            \creategroup%
+                        }{}%
+                    }%
                 }{}%
+                \addtocounter{currow}{1}%
             }%
         \end{tabularx}
         \clearpage
