@@ -96,7 +96,7 @@
 \newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\disable}
 % Enable or disable showing points
-\newcommand{\showpoints}{\enable}
+\newcommand{\showpoints}{\disable}
 \newcommand{\showdeadinfo}{\disable}
 \newcommand{\showdeadrow}{\enable}
 
@@ -194,9 +194,13 @@
   \ifcat_\ifnum0<0#1 _\else A\fi
 }
 
-\newcommand\clipstring[2][3cm]{%
-    \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
+\newcommand\clipstring[2][\headerheight]{%
+    \clipbox{0pt {\dimexpr\height-(#1/2)\relax}}{\vspace*{\fill} #2\vspace*{\fill}}%
 }
+
+% \newcommand\clipstring[2][3cm]{%
+%     \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
+% }
 
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
@@ -225,9 +229,7 @@
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
         \checkfirstampersand%
-        % TODO
-        % \clipstring[150pt]{\rotatebox[origin=c]{90}{\curtitle}}
-        \rotatebox[origin=c]{90}{\curtitle}%
+        \clipstring{\rotatebox[origin=c]{90}{\curtitle}}
     }%
     \checkfirstampersand%
     \xintifEq{\pdflanguage}{\english}%
@@ -601,7 +603,8 @@
     % Use \arrayrulewidth as rule width - https://tex.stackexchange.com/questions/122956/
     \newcounter{maxrows}
     \pgfmathparse{
-        int ((\textheight - \headerheight) / (\baselineskip + \extrarowheight + \arrayrulewidth))
+        int ((\textheight - \headerheight) / % chktex 8
+        (\baselineskip + \extrarowheight + \arrayrulewidth))
     }
     \setcounter{maxrows}{\pgfmathresult}
 
@@ -649,7 +652,6 @@
     %%%%%%%%%%%%%
     % Iterate all tables
     % TODO adjust font size to width of table
-    % to calculate pages
     \forloop{pageidx}{0}{\value{pageidx} < \value{numpages}}{
         \pgfmathparse{int ((\value{pageidx}+1)*\value{maxrows})}
         \setcounter{upperbound}{\pgfmathresult}
