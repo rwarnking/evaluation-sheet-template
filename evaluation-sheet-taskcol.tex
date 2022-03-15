@@ -30,39 +30,13 @@
 % Used for displaying code inside the assignments (used for \lstset)
 \usepackage{listings}
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Arguments
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\documentclass{article}
+% TODO tlmgr uninstall xstring
+% https://tex.stackexchange.com/questions/408896/extract-first-character-allowing-for-extra-grouping
+\usepackage{xstring}
 
-%%%%%%%%%%%%
-% Packages %
-%%%%%%%%%%%%
-\usepackage[utf8]{inputenc}
-\usepackage[margin=0.5cm]{geometry}
-\usepackage{array, tabularx}
-\usepackage[dvipsnames, table]{xcolor}
-
-% For \xintFor and similar
-\usepackage{xinttools}
-% For \xintifCmp and similar
-\usepackage{xintfrac}
-% For \forloop
-\usepackage{forloop}
-%
-\usepackage{calc}
-% For \pgfmathresult
-\usepackage{tikz}
-
-% For loading the .csv files as database
-\usepackage{datatool}
-% Clip the informations to fit inside the table cells
-\usepackage{trimclip}
-
-% Optional
-% Used to reduce distance between items in itemize (\setlist)
-\usepackage{enumitem}
-% Used for displaying code inside the assignments (used for \lstset)
-\usepackage{listings}
+% TODO: add to install script
+% Used for dashed line
+\usepackage{arydshln}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
@@ -96,12 +70,13 @@
 \newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\disable}
 % Enable or disable showing points
-\newcommand{\showpoints}{\disable}
+\newcommand{\showpoints}{\enable}
 \newcommand{\showdeadinfo}{\disable}
 \newcommand{\showdeadrow}{\enable}
+% Enable or disable dashed rows inbetween each participant
+\newcommand{\showrowlinesall}{\disable}
 
 % Define max height of the header
-% TODO actually limit header to that size
 \newlength{\headerheight}
 \setlength{\headerheight}{120 pt}
 
@@ -180,7 +155,10 @@
     \noalign {\ifnum 0=`}\fi \hrule height 1pt
     \futurelet \reserved@a \@xhline
 }
-\newcolumntype{;}{@{\vrule width 1pt}|}
+% OBACHT: The arydshln package overrides the behaviour of ! and @
+% Furthermore the length of the vrule is changed
+% \newcolumntype{;}{@{\vrule width 1pt}}
+\newcolumntype{;}{!{\vrule width 1pt}}
 \makeatother
 % https://tex.stackexchange.com/questions/12703/
 \newcolumntype{L}{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}X}
@@ -198,10 +176,6 @@
     \clipbox{0pt {\dimexpr\height-(#1/2)\relax}}{\vspace*{\fill} #2\vspace*{\fill}}%
 }
 
-% \newcommand\clipstring[2][3cm]{%
-%     \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
-% }
-
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
@@ -215,12 +189,12 @@
 % @param upperbound The max column number of the current page
 \newcommand{\printheader}{%
     \setcounter{first}{\enable}%
-    \printheadercell{\showname}{TODO}{TODO}%
-    \printheadercell{\showstudy}{TODO}{TODO}%
-    \printheadercell{\showpersonid}{TD}{TD}%
-    \printheadercell{\showtutorgroupid}{T}{T}%
-    \printheadercell{\showgroupid}{T}{T}%
-    \printheadercell{\showdate}{TODO}{TODO}%
+    \printheadercell{\showname}{}{}%
+    \printheadercell{\showstudy}{}{}%
+    \printheadercell{\showpersonid}{}{}%
+    \printheadercell{\showtutorgroupid}{}{}%
+    \printheadercell{\showgroupid}{}{}%
+    \printheadercell{\showdate}{}{}%
     % TODO unterschiede small and big tasks
     % (not sure if possible - rotate box does not allow newlines,
     % and long text would not be usefull anyway - maybe always use curtitle)
@@ -241,12 +215,12 @@
     \\ \hline
     %
     \setcounter{first}{\enable}%
-    \printheadercell{\showname}{TODO}{TODO}%
-    \printheadercell{\showstudy}{TODO}{TODO}%
-    \printheadercell{\showpersonid}{TD}{TD}%
-    \printheadercell{\showtutorgroupid}{T}{T}%
-    \printheadercell{\showgroupid}{T}{T}%
-    \printheadercell{\showdate}{TODO}{TODO}%
+    \printheadercell{\showname}{}{}%
+    \printheadercell{\showstudy}{}{}%
+    \printheadercell{\showpersonid}{}{}%
+    \printheadercell{\showtutorgroupid}{}{}%
+    \printheadercell{\showgroupid}{}{}%
+    \printheadercell{\showdate}{}{}%
     %
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
@@ -355,8 +329,9 @@
         \setcounter{first}{\disable}%
         \setcounter{firstgroup}{\disable}%
     }{%
-        % TODO allow to select thinline
-        \\ %
+        % If enabled show dashed lines in between all participant rows
+        \ifthenelse{\equal{\showrowlinesall}{\enable}}%
+        {\\\hdashline}{\\}%
     }%
     %
     \ifthenelse{\equal{\showname}{\enable}}%
@@ -423,6 +398,18 @@
 % Each in his own line. The participants should be the members of one group.
 % Needs \curparticipants to be defined
 \newcommand{\printnames}[1]{%
+    % \DTLgetvalue{\firstname}%
+    % {participants_db}%
+    % {1}% row
+    % {3}% column 3 firstname
+
+    % \DTLgetvalue{\lastname}%
+    % {participants_db}%
+    % {1}% row
+    % {4}% column 4 lastname
+
+    % \expandafter\DTLinitials\expandafter{\firstname{}} %
+    % \expandafter\DTLinitials\expandafter{\lastname{}}%
     \DTLfetch{participants_db}{\personidKey}{#1}{\firstnameKey} %
     \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}%
 }
@@ -617,7 +604,7 @@
     {
         \xintifEq{\curtutorid}{\tutornumber}%
         {%
-            % TODO do not include participants that joined the group later on
+            % Care this does also count participants that joined the group later on
             \xintFor ##1 in \curparticipants \do {%
                 \addtocounter{numrows}{1}
             }
@@ -651,7 +638,7 @@
     % Main Loop %
     %%%%%%%%%%%%%
     % Iterate all tables
-    % TODO adjust font size to width of table
+    % TODO shorten strings (firstname lastname to f. lastname)
     \forloop{pageidx}{0}{\value{pageidx} < \value{numpages}}{
         \pgfmathparse{int ((\value{pageidx}+1)*\value{maxrows})}
         \setcounter{upperbound}{\pgfmathresult}
