@@ -75,6 +75,11 @@
 \newcommand{\showdeadrow}{\enable}
 % Enable or disable dashed rows inbetween each participant
 \newcommand{\showrowlinesall}{\disable}
+% Replaces name with initials if enabled
+\newcommand{\shortenfirstname}{\disable}
+\newcommand{\shortenlastname}{\disable}
+% TODO shorten field of study
+\newcommand{\shortenfieldofstudy}{\disable}
 
 % Define max height of the header
 \newlength{\headerheight}
@@ -398,20 +403,35 @@
 % Each in his own line. The participants should be the members of one group.
 % Needs \curparticipants to be defined
 \newcommand{\printnames}[1]{%
-    % \DTLgetvalue{\firstname}%
-    % {participants_db}%
-    % {1}% row
-    % {3}% column 3 firstname
+    \DTLgetcolumnindex{\partidcolumn}{participants_db}{\personidKey}%
+    % Use this instead of DTLgetrowindex to expand the argument
+    \xdtlgetrowindex{\partrow}{participants_db}{\partidcolumn}{#1}% groupindex
 
-    % \DTLgetvalue{\lastname}%
-    % {participants_db}%
-    % {1}% row
-    % {4}% column 4 lastname
-
-    % \expandafter\DTLinitials\expandafter{\firstname{}} %
-    % \expandafter\DTLinitials\expandafter{\lastname{}}%
-    \DTLfetch{participants_db}{\personidKey}{#1}{\firstnameKey} %
-    \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}%
+    \ifthenelse{\equal{\shortenfirstname}{\enable}}%
+    {%
+        % Get column index of firstname
+        \DTLgetcolumnindex{\namecolumn}{participants_db}{\firstnameKey}%
+        \DTLgetvalue{\firstname}%
+        {participants_db}%
+        {\partrow}%
+        {\namecolumn}%
+        \expandafter\DTLinitials\expandafter{\firstname{}} %
+    }{%
+        \DTLfetch{participants_db}{\personidKey}{#1}{\firstnameKey} %
+    }%
+    %
+    \ifthenelse{\equal{\shortenlastname}{\enable}}%
+    {%
+        % Get column index of lastname
+        \DTLgetcolumnindex{\namecolumn}{participants_db}{\lastnameKey}%
+        \DTLgetvalue{\lastname}%
+        {participants_db}%
+        {\partrow}%
+        {\namecolumn}%
+        \expandafter\DTLinitials\expandafter{\lastname{}}%
+    }{%
+        \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}%
+    }%
 }
 
 % Iterate and print the study fields of the participants given.
@@ -440,6 +460,8 @@
 
 % Print the day and time for the currently processed slot
 \newcommand{\printdate}{%
+    % TODO
+    \expandafter\DTLinitials\expandafter{\curdate{}}
     \curdate{}%
 }
 
@@ -637,8 +659,7 @@
     %%%%%%%%%%%%%
     % Main Loop %
     %%%%%%%%%%%%%
-    % Iterate all tables
-    % TODO shorten strings (firstname lastname to f. lastname)
+    % Iterate all groups and create pages/tables for them
     \forloop{pageidx}{0}{\value{pageidx} < \value{numpages}}{
         \pgfmathparse{int ((\value{pageidx}+1)*\value{maxrows})}
         \setcounter{upperbound}{\pgfmathresult}
