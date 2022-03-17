@@ -182,7 +182,7 @@
 % @param #1 the length, default \headerheight
 % @param #2 the string
 \newcommand\clipstring[2][\headerheight]{%
-    \clipbox{0pt {\dimexpr\height - (#1/2)\relax}}{#2}%
+    \clipbox{0pt {\dimexpr\height - (#1/2)\relax}}{#2}% chktex 8
 }
 
 \setlength\extrarowheight{2pt}
@@ -196,7 +196,6 @@
 %
 % TODO: Add Row with assignment title
 % TODO: Add Row with assignment undertitle (kinda like id)
-% TODO: Only show one number per cell for groups
 % Notes:
 % \DTLsplitstring{\curdesc}{\\}{\beforepart}{\afterpart}%
 % \beforepart
@@ -369,27 +368,39 @@
     }{}%
     \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
     {%
-        \isactive{\printtutorgroupid}%
+        \isactive{\printonce{\printtutorgroupid}}%
         &%
     }{}%
     \ifthenelse{\equal{\showgroupid}{\enable}}%
     {%
-        \isactive{\printgroupid}%
+        \isactive{\printonce{\printgroupid}}%
         &%
     }{}%
     \ifthenelse{\equal{\showdate}{\enable}}%
     {%
-        \isactive{\printdate}%
+        \isactive{\printonce{\printdate}}%
         &%
     }{}%
     % Add missing ampersands and points if enabled
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey}%
     {%
-        \printpoints{\curtask}%
+        \printonce{\printpoints{\curtask}}%
         &%
     }%
-    \printpointsum%
+    \printonce{\printpointsum}%
+}
+
+% This function is used to print only one value per cell
+% Needs personnum to contain 2 for the first participant
+% Needs showrowlinesall to be defined
+% @param #1 The string to print
+\newcommand{\printonce}[1]{%
+    \ifthenelse{\equal{\showrowlinesall}{\enable}}%
+    {#1}{%
+        \ifthenelse{\equal{\value{personnum}}{2}}%
+        {#1}{}%
+    }%
 }
 
 % Check if a participant is active by comparing its entry sheet to the current sheetnumber
