@@ -69,6 +69,10 @@
 \newcommand{\showtutorgroupid}{\disable}
 \newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\disable}
+% Enable or disable header rows (title, description, points reachable)
+\newcommand{\showtitle}{\enable}
+\newcommand{\showdesc}{\enable}
+\newcommand{\showmaxpoints}{\enable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
 \newcommand{\showdeadinfo}{\disable}
@@ -185,6 +189,15 @@
     \clipbox{0pt {\dimexpr\height - (#1/2)\relax}}{#2}% chktex 8
 }
 
+\newcommand\clipstringLR[2][3cm]{%
+    \clipbox{{\dimexpr (\width-(#1))/2 \relax} 0pt}{#2}% chktex 8
+}
+
+% https://tex.stackexchange.com/questions/341198/
+\makeatletter
+\newcommand\tablecellwidth{\TX@col@width}
+\makeatother
+
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
@@ -194,8 +207,9 @@
 % and long text would not be usefull anyway
 % Use 1-1 and 1a-1 as keys in these cases
 %
-% TODO: Add Row with assignment title
 % TODO: Add Row with assignment undertitle (kinda like id)
+% TODO: remove \else where it is not needed
+% TODO: adjust header to set height
 % Notes:
 % \DTLsplitstring{\curdesc}{\\}{\beforepart}{\afterpart}%
 % \beforepart
@@ -205,8 +219,67 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Determine which information rows should be used for the header.
 % Each row can be disabled.
-% @param upperbound The max column number of the current page
 \newcommand{\printheader}{%
+    % Title row containing filler cells followed by the title of each assignment
+    \ifthenelse{\equal{\showtitle}{\enable}}%
+    {%
+        \printtitlerow%
+    }{}%
+    % Description row containing filler cells followed by the description of each assignment
+    \ifthenelse{\equal{\showdesc}{\enable}}%
+    {%
+        \printdescrow%
+    }{}%
+    % Points row containing filler cells followed by the points of each assignment
+    \ifthenelse{\equal{\showmaxpoints}{\enable}}%
+    {%
+        \printpointsrow%
+    }{}%
+}
+
+% Title row containing filler cells followed by the title of each assignment
+\newcounter{subtasks}
+\newcommand{\printtitlerow}{%
+    \setcounter{first}{\enable}%
+    \printheadercell{\showname}{}{}%
+    \printheadercell{\showstudy}{}{}%
+    \printheadercell{\showpersonid}{}{}%
+    \printheadercell{\showtutorgroupid}{}{}%
+    \printheadercell{\showgroupid}{}{}%
+    \printheadercell{\showdate}{}{}%
+    %
+    \DTLforeach*{assignments_db}% database label
+    {\curtask=\taskidKey, \curtitle=\titleKey,
+        \curpoints=\pointsKey, \curdesc=\descriptionKey}
+    {%
+        \setcounter{subtasks}{0}%
+        \if\IsPositive{\curtask}%
+            \DTLforeach*{assignments_db}% database label
+            {\tmptask=\taskidKey}{%
+                % Split the assignement id at the - character
+                \expandafter\DTLsplitstring\expandafter{\tmptask}{-}{\beforepart}{\afterpart}%
+                % Count how often the task number is part of this assignment
+                \StrCount{\beforepart}{\curtask}[\tmp]%
+                % If there was exactly one occurance it is a subtask
+                \ifnum\tmp=1%
+                    \addtocounter{subtasks}{1}%
+                \fi%
+            }%
+            \checkfirstampersand%
+            \multicolumn{\value{subtasks}}{c|}{%
+                \clipstringLR[
+                    (\tablecellwidth+\tabcolsep+\tabcolsep)*\value{subtasks}-\tabcolsep-\tabcolsep
+                ]{\curtitle}%
+            }%
+        \else%
+        \fi%
+    }%
+    \checkfirstampersand%
+    \\ \hline
+}
+
+% Description row containing filler cells followed by the description of each assignment
+\newcommand{\printdescrow}{%
     \setcounter{first}{\enable}%
     \printheadercell{\showname}{}{}%
     \printheadercell{\showstudy}{}{}%
@@ -230,7 +303,10 @@
         \clipstring{\rotatebox[origin=c]{90}{\textbf{Summe}}}
     }%
     \\ \hline
-    %
+}
+
+% Points row containing filler cells followed by the points of each assignment
+\newcommand{\printpointsrow}{%
     \setcounter{first}{\enable}%
     \printheadercell{\showname}{}{}%
     \printheadercell{\showstudy}{}{}%
@@ -701,7 +777,7 @@
             ;% chktex 26
             *{\value{asigncol}}{C|}C
         }%
-            \setcounter{currow}{1}
+            \setcounter{currow}{1}%
             \printheader%
             %
             \DTLforeach*{groups_db}% database label
