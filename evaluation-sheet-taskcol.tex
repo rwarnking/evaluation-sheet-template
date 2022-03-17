@@ -196,8 +196,7 @@
 %
 % TODO: Add Row with assignment title
 % TODO: Add Row with assignment undertitle (kinda like id)
-% TODO Bug: point rows seem to be index based and not keybased
-% The sum for assignment 1 is not in the sum column but rather at the front
+% TODO: Only show one number per cell for groups
 % Notes:
 % \DTLsplitstring{\curdesc}{\\}{\beforepart}{\afterpart}%
 % \beforepart
@@ -383,11 +382,11 @@
         \isactive{\printdate}%
         &%
     }{}%
-    % Add missing ampersands
-    \forloop{tmpcounter}{0}{\value{tmpcounter} < \value{asigncol}}{%
-        \addtocounter{tmpcounter}{2}%
-        \printpoints{\value{tmpcounter}}%
-        \addtocounter{tmpcounter}{-2}%
+    % Add missing ampersands and points if enabled
+    \DTLforeach*{assignments_db} % database label
+    {\curtask=\taskidKey}%
+    {%
+        \printpoints{\curtask}%
         &%
     }%
     \printpointsum%
@@ -501,14 +500,14 @@
         \xintifEq{\showpoints}{\enable}%
         {%
             % Get point value of this group for the given task
-            % \DTLfetch{points_db}{\groupidKey}{\curgroupid}{#1}%
             \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
+            \DTLgetcolumnindex{\assigncolumn}{points_db}{#1}%
             % Use this instead of DTLgetrowindex to expand the argument
             \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
             \DTLgetvalue{\taskpoints}%
             {points_db}%
             {\grouprow}%
-            {#1}%
+            {\assigncolumn}%
             \taskpoints%
         }{}%
     }%
