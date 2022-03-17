@@ -49,7 +49,7 @@
 % \def\semester{2018}
 
 % Select or add a sheet (with leading zero)
-\def\sheetnumber{02}
+\def\sheetnumber{01}
 
 % Select a teaching person
 \def\tutornumber{1}
@@ -66,7 +66,7 @@
 \newcommand{\showname}{\enable}
 \newcommand{\showstudy}{\disable}
 \newcommand{\showpersonid}{\disable}
-\newcommand{\showtutorgroupid}{\enable}
+\newcommand{\showtutorgroupid}{\disable}
 \newcommand{\showgroupid}{\enable}
 \newcommand{\showdate}{\disable}
 % Enable or disable showing points
@@ -76,7 +76,7 @@
 % Enable or disable dashed rows inbetween each participant
 \newcommand{\showrowlinesall}{\disable}
 % Replaces name with initials if enabled
-\newcommand{\shortenfirstname}{\disable}
+\newcommand{\shortenfirstname}{\enable}
 \newcommand{\shortenlastname}{\disable}
 % TODO shorten field of study
 \newcommand{\shortenfieldofstudy}{\disable}
@@ -178,13 +178,26 @@
 }
 
 \newcommand\clipstring[2][\headerheight]{%
-    \clipbox{0pt {\dimexpr\height-(#1/2)\relax}}{\vspace*{\fill} #2\vspace*{\fill}}%
+    \clipbox{0pt {\dimexpr\height - (#1/2)\relax}}{\vspace*{\fill} #2\vspace*{\fill}}%
 }
 
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
 \renewcommand{\familydefault}{\sfdefault}
+
+% OBACHT: newlines are not possible since the columns are all equally sized
+% and long text would not be usefull anyway
+% Use 1-1 and 1a-1 as keys in these cases
+%
+% TODO: Add Row with assignment title
+% TODO: Add Row with assignment undertitle (kinda like id)
+% TODO Bug: why is group one not shown?
+% TODO Bug: point rows seem to be index based and not keybased
+% The sum for assignment 1 is not in the sum column but rather at the front
+% Notes:
+% \DTLsplitstring{\curdesc}{\\}{\beforepart}{\afterpart}%
+% \beforepart
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Header
@@ -200,22 +213,20 @@
     \printheadercell{\showtutorgroupid}{}{}%
     \printheadercell{\showgroupid}{}{}%
     \printheadercell{\showdate}{}{}%
-    % TODO unterschiede small and big tasks
-    % (not sure if possible - rotate box does not allow newlines,
-    % and long text would not be usefull anyway - maybe always use curtitle)
+    %
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
         \checkfirstampersand%
-        \clipstring{\rotatebox[origin=c]{90}{\curtitle}}
+        \clipstring{\rotatebox[origin=c]{90}{\curdesc}}
     }%
     \checkfirstampersand%
     \xintifEq{\pdflanguage}{\english}%
     {%
-        \rotatebox[origin=c]{90}{\textbf{Sum}}
+        \clipstring{\rotatebox[origin=c]{90}{\textbf{Sum}}}
     } {%
-        \rotatebox[origin=c]{90}{\textbf{Sum}}
+        \clipstring{\rotatebox[origin=c]{90}{\textbf{Summe}}}
     }%
     \\ \hline
     %
