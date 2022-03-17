@@ -177,8 +177,12 @@
   \ifcat_\ifnum0<0#1 _\else A\fi
 }
 
+% Clips the input string to fit into a box with the given length.
+% The text is centered.
+% @param #1 the length, default \headerheight
+% @param #2 the string
 \newcommand\clipstring[2][\headerheight]{%
-    \clipbox{0pt {\dimexpr\height - (#1/2)\relax}}{\vspace*{\fill} #2\vspace*{\fill}}%
+    \clipbox{0pt {\dimexpr\height - (#1/2)\relax}}{#2}%
 }
 
 \setlength\extrarowheight{2pt}
@@ -192,7 +196,6 @@
 %
 % TODO: Add Row with assignment title
 % TODO: Add Row with assignment undertitle (kinda like id)
-% TODO Bug: why is group one not shown?
 % TODO Bug: point rows seem to be index based and not keybased
 % The sum for assignment 1 is not in the sum column but rather at the front
 % Notes:
@@ -219,7 +222,7 @@
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
         \checkfirstampersand%
-        \clipstring{\rotatebox[origin=c]{90}{\curdesc}}
+        \clipstring{\rotatebox[origin=c]{90}{\curdesc}}%
     }%
     \checkfirstampersand%
     \xintifEq{\pdflanguage}{\english}%
@@ -688,7 +691,7 @@
             ;% chktex 26
             *{\value{asigncol}}{C|}C
         }%
-            \setcounter{currow}{0}
+            \setcounter{currow}{1}
             \printheader%
             %
             \DTLforeach*{groups_db}% database label
