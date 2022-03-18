@@ -31,6 +31,8 @@
 \usepackage{listings}
 
 % TODO tlmgr uninstall xstring
+% TODO: add to install script
+% Used for substring and string equality inside the assignment header
 % https://tex.stackexchange.com/questions/408896/extract-first-character-allowing-for-extra-grouping
 \usepackage{xstring}
 
@@ -83,8 +85,8 @@
 % Replaces name with initials if enabled
 \newcommand{\shortenfirstname}{\enable}
 \newcommand{\shortenlastname}{\disable}
-% TODO shorten field of study
-\newcommand{\shortenfieldofstudy}{\disable}
+% Replace field of study with its initials
+\newcommand{\shortenfieldofstudy}{\enable}
 
 % Define max height of the header
 \newlength{\headerheight}
@@ -585,7 +587,23 @@
 % The participants should be the members of one group.
 % Needs \curparticipants to be defined
 \newcommand{\printstudy}[1]{%
-    \DTLfetch{participants_db}{\personidKey}{#1}{\studyfieldKey}%
+    \ifthenelse{\equal{\shortenfieldofstudy}{\enable}}%
+    {%
+        \DTLgetcolumnindex{\partidcolumn}{participants_db}{\personidKey}%
+        % Use this instead of DTLgetrowindex to expand the argument
+        \xdtlgetrowindex{\partrow}{participants_db}{\partidcolumn}{#1}% groupindex
+        % Get column index of lastname
+        \DTLgetcolumnindex{\studycolumn}{participants_db}{\studyfieldKey}%
+        \DTLgetvalue{\studyfield}%
+        {participants_db}%
+        {\partrow}%
+        {\studycolumn}%
+        % Remove potential -of- from the study field string
+        \StrSubstitute{\studyfield{}}{of}{}[\temp]
+        \expandafter\DTLinitials\expandafter{\temp}%
+    }{%
+        \DTLfetch{participants_db}{\personidKey}{#1}{\studyfieldKey}%
+    }%
 }
 
 % Iterate and print the identification numbers of the participants given.
@@ -607,8 +625,6 @@
 
 % Print the day and time for the currently processed slot
 \newcommand{\printdate}{%
-    % TODO
-    \expandafter\DTLinitials\expandafter{\curdate{}}
     \curdate{}%
 }
 
