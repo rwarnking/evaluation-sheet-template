@@ -71,6 +71,7 @@
 \newcommand{\showdate}{\disable}
 % Enable or disable header rows (title, description, points reachable)
 \newcommand{\showtitle}{\enable}
+\newcommand{\showsubtaskid}{\enable}
 \newcommand{\showdesc}{\enable}
 \newcommand{\showmaxpoints}{\enable}
 % Enable or disable showing points
@@ -190,7 +191,7 @@
 }
 
 \newcommand\clipstringLR[2][3cm]{%
-    \clipbox{{\dimexpr (\width-(#1))/2 \relax} 0pt}{#2}% chktex 8
+    \clipbox{{\dimexpr (\width - (#1))/2 \relax} 0pt}{#2}% chktex 8
 }
 
 % https://tex.stackexchange.com/questions/341198/
@@ -207,9 +208,11 @@
 % and long text would not be usefull anyway
 % Use 1-1 and 1a-1 as keys in these cases
 %
-% TODO: Add Row with assignment undertitle (kinda like id)
-% TODO: remove \else where it is not needed
+% TODO: remove \else where it is not needed (other document also)
 % TODO: adjust header to set height
+% TODO: include general info file
+% TODO: use clipsting for all cells
+% TODO: adjust clipstring to cut right instead of both sides?
 % Notes:
 % \DTLsplitstring{\curdesc}{\\}{\beforepart}{\afterpart}%
 % \beforepart
@@ -224,6 +227,11 @@
     \ifthenelse{\equal{\showtitle}{\enable}}%
     {%
         \printtitlerow%
+    }{}%
+    % Subtask row containing filler cells followed by the id of each subtask
+    \ifthenelse{\equal{\showsubtaskid}{\enable}}%
+    {%
+        \printsubtaskrow%
     }{}%
     % Description row containing filler cells followed by the description of each assignment
     \ifthenelse{\equal{\showdesc}{\enable}}%
@@ -271,8 +279,47 @@
                     (\tablecellwidth+\tabcolsep+\tabcolsep)*\value{subtasks}-\tabcolsep-\tabcolsep
                 ]{\curtitle}%
             }%
-        \else%
         \fi%
+    }%
+    \checkfirstampersand%
+    \\ \hline
+}
+
+% Subtask row containing filler cells followed by the id of each subtask
+\newcommand{\printsubtaskrow}{%
+    \setcounter{first}{\enable}%
+    \printheadercell{\showname}{}{}%
+    \printheadercell{\showstudy}{}{}%
+    \printheadercell{\showpersonid}{}{}%
+    \printheadercell{\showtutorgroupid}{}{}%
+    \printheadercell{\showgroupid}{}{}%
+    \printheadercell{\showdate}{}{}%
+    %
+    \setcounter{subtasks}{0}%
+    \DTLforeach*{assignments_db}% database label
+    {\curtask=\taskidKey, \curtitle=\titleKey,
+        \curpoints=\pointsKey, \curdesc=\descriptionKey}
+    {%
+        \xintifEq{\value{subtasks}}{0}%
+        {%
+            \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
+            \DTLforeach*{assignments_db}% database label
+            {\tmptask=\taskidKey}{%
+                \expandafter\DTLsplitstring\expandafter{\tmptask}{-}{\beforepartB}{\afterpart}%
+                \IfStrEq{\beforepartA}{\beforepartB}%
+                {\addtocounter{subtasks}{1}}%
+                {}%
+            }%
+            \checkfirstampersand%
+            \multicolumn{\value{subtasks}}{c|}{%
+                % Redefine beforepartA since it is deleted by the ampersand
+                \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
+                \beforepartA%
+            }%
+            \addtocounter{subtasks}{-1}%
+        }{%
+            \addtocounter{subtasks}{-1}%
+        }%
     }%
     \checkfirstampersand%
     \\ \hline
@@ -643,7 +690,6 @@
                 % Do not sum points of subtask, only full assignments
                 \if\IsPositive{\curtask}%
                     \addtocounter{pointsum}{\taskpoints}%
-                \else%
                 \fi%
             }%
             %
@@ -812,4 +858,26 @@
         \fi
         \clearpage
     }
+
+    \DTLforeach*{assignments_db} % database label
+    {\curtask=\taskidKey, \curtitle=\titleKey,
+        \curpoints=\pointsKey, \curdesc=\descriptionKey}
+    {%
+        \setcounter{subtasks}{0}
+        \if\IsPositive{\curtask}%
+            \DTLforeach*{assignments_db} % database label
+            {\tmptask=\taskidKey}{%
+                % Split the assignement id at the - character
+                \expandafter\DTLsplitstring\expandafter{\tmptask}{-}{\beforepart}{\afterpart}%
+                % Count how often the task number is part of this assignment
+                \StrCount{\beforepart}{\curtask}[\tmp]
+                % If there was exactly one occurance it is a subtask
+                \ifnum\tmp=1%
+                    \addtocounter{subtasks}{1}
+                \fi
+            }
+            \curtask{} has \arabic{subtasks} subtasks\\
+        \fi%
+    }%
+
 \end{document}
