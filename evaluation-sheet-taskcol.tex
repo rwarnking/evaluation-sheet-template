@@ -213,6 +213,18 @@
     }%
 }
 
+\makeatletter
+% xstring addition that extracts the leading number from a string.
+% Used to get the assignment number from a subtask.
+% https://tex.stackexchange.com/questions/35250/
+% @param #1 The string
+% @returl \Result the macro containing the number
+\newcommand*\ExtractLeadingNumber[1]{%
+    \IfBeginWith{#1}{ }{\StrBehind{#1}{ }[\temp@@]}{\def\temp@@{#1}}%
+    \IfDecimal\temp@@{\def\Result{#1}}{\StrBefore{#1}{\@xs@afterdecimal}[\Result]}%
+}
+\makeatother
+
 % OBACHT: with the current implementation the tabularx has a limted amount of supported
 % columns (26), having more columns leads to wrong column width
 % OBACHT: newlines are not possible since the columns are all equally sized
@@ -224,7 +236,6 @@
 % TODO: if showsubtaskid or showtitle are enabled it is not possible to disable all info cols
 % TODO: sort all length (setlength)
 % TODO: Fix cellcolor overdrawing lines
-% TODO: \showtitle does not work for 123
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Header
@@ -273,14 +284,12 @@
         \if\IsPositive{\curtask}%
             \DTLforeach*{assignments_db}% database label
             {\tmptask=\taskidKey}{%
-                % Split the assignement id at the - character
-                \expandafter\DTLsplitstring\expandafter{\tmptask}{-}{\beforepart}{\afterpart}%
-                % Count how often the task number is part of this assignment
-                \StrCount{\beforepart}{\curtask}[\tmp]%
-                % If there was exactly one occurance it is a subtask
-                \ifnum\tmp=1%
+                % Get the leading number
+                \ExtractLeadingNumber{\tmptask}%
+                % Check if the number equals the current assignment
+                \IfStrEq{\curtask}{\Result}{%
                     \addtocounter{subtasks}{1}%
-                \fi%
+                }{}%
             }%
             \checkfirstampersand%
             \multicolumn{\value{subtasks}}{c|}{%
