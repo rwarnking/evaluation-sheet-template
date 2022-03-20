@@ -188,11 +188,13 @@
 \newcommand\tablecellwidth{\TX@col@width}
 \makeatother
 
+\newlength{\thislineheight}
+\setlength\thislineheight{\baselineskip}
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
 \renewcommand{\familydefault}{\sfdefault}
-
+\setlength\tabcolsep{0pt}
 % Clips the input string to fit into a box with the given height.
 % The width is also clipped and uses the \linewidth.
 % @param #1 the length, default \headerheight
@@ -200,7 +202,7 @@
 \newcommand\clipstring[2][\headerheight]{%
     \clipbox{%
         {\dimexpr((\width - (#1))/2)\relax} % chktex 8
-        {\dimexpr((\height - \tablecellwidth +1pt)/2+0.5pt)\relax}% chktex 8
+        {\dimexpr((\height - \thislineheight)/2 + \extrarowheight)\relax}% chktex 8
     }{%
         #2%
     }%
@@ -214,8 +216,11 @@
 %
 % TODO: adjust header to set height
 % TODO: include general info file
-% TODO: use clipsting for all cells
-% TODO: enable \setlength\tabcolsep{0pt} per default and use clipbox for all cells?
+% TODO: if showsubtaskid or showtitle are enabled it is not possible to disable all info cols
+% TODO: sort all length (setlength)
+% TODO: Add hspace to info columns
+% TODO: Fix cellcolor overdrawing lines
+% TODO: \showtitle does not work for 123
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Header
@@ -314,7 +319,9 @@
             \multicolumn{\value{subtasks}}{c|}{%
                 % Redefine beforepartA since it is deleted by the ampersand
                 \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
-                \beforepartA%
+                \clipstring[
+                    (\tablecellwidth+\tabcolsep+\tabcolsep)*\value{subtasks}-\tabcolsep-\tabcolsep
+                ]{\beforepartA}%
             }%
             \addtocounter{subtasks}{-1}%
         }{%
@@ -575,9 +582,9 @@
         {participants_db}%
         {\partrow}%
         {\namecolumn}%
-        \expandafter\DTLinitials\expandafter{\lastname{}}%
+        \expandafter\DTLinitials\expandafter{\lastname{}} %
     }{%
-        \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}%
+        \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}\hspace*{2pt}%
     }%
 }
 
@@ -656,7 +663,7 @@
             {points_db}%
             {\grouprow}%
             {\assigncolumn}%
-            \taskpoints%
+            \clipstring[\linewidth-1pt]{\taskpoints}%
         }{}%
     }%
 }
@@ -708,7 +715,7 @@
             }%
             %
             % Output point sum
-            \arabic{pointsum}%
+            \clipstring[\linewidth-1pt]{\arabic{pointsum}}%
             % Color sum column for groups with less then half of max points
             \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
             {\cellcolor{underperformed}}%
