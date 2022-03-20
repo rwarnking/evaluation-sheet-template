@@ -188,8 +188,13 @@
 \newcommand\tablecellwidth{\TX@col@width}
 \makeatother
 
+% Save font size to be used in multicolumns
 \newlength{\thislineheight}
 \setlength\thislineheight{\baselineskip}
+% Specify the row padding left and right
+\newlength{\paddingLR}
+\setlength\paddingLR{6pt}
+% Specify the row padding top and bottom
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
@@ -218,7 +223,6 @@
 % TODO: include general info file
 % TODO: if showsubtaskid or showtitle are enabled it is not possible to disable all info cols
 % TODO: sort all length (setlength)
-% TODO: Add hspace to info columns
 % TODO: Fix cellcolor overdrawing lines
 % TODO: \showtitle does not work for 123
 
@@ -582,9 +586,9 @@
         {participants_db}%
         {\partrow}%
         {\namecolumn}%
-        \expandafter\DTLinitials\expandafter{\lastname{}} %
+        \expandafter\DTLinitials\expandafter{\lastname{}}\hspace*{\paddingLR}%
     }{%
-        \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}\hspace*{2pt}%
+        \DTLfetch{participants_db}{\personidKey}{#1}{\lastnameKey}\hspace*{\paddingLR}%
     }%
 }
 
@@ -604,10 +608,14 @@
         {\partrow}%
         {\studycolumn}%
         % Remove potential -of- from the study field string
-        \StrSubstitute{\studyfield{}}{of}{}[\temp]
+        \StrSubstitute{\studyfield{}}{of}{}[\temp]%
+        \hspace*{\paddingLR}%
         \expandafter\DTLinitials\expandafter{\temp}%
+        \hspace*{\paddingLR}%
     }{%
+        \hspace*{\paddingLR}%
         \DTLfetch{participants_db}{\personidKey}{#1}{\studyfieldKey}%
+        \hspace*{\paddingLR}%
     }%
 }
 
@@ -615,22 +623,22 @@
 % The participants should be the members of one group.
 % Needs \curparticipants to be defined
 \newcommand{\printpersonid}[1]{%
-    #1%
+    \hspace*{\paddingLR}#1\hspace*{\paddingLR}%
 }
 
 % Print the tutor group id
 \newcommand{\printtutorgroupid}{%
-    \arabic{itergroups}%
+    \hspace*{\paddingLR}\arabic{itergroups}\hspace*{\paddingLR}%
 }
 
 % Print the group id
 \newcommand{\printgroupid}{%
-    \curgroupid{}%
+    \hspace*{\paddingLR}\curgroupid{}\hspace*{\paddingLR}%
 }
 
 % Print the day and time for the currently processed slot
 \newcommand{\printdate}{%
-    \curdate{}%
+    \hspace*{\paddingLR}\curdate{}\hspace*{\paddingLR}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
