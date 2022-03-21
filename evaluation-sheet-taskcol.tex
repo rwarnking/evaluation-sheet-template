@@ -88,8 +88,8 @@
 \newcommand{\shortenfieldofstudy}{\enable}
 
 % Define max height of the header
-\newlength{\headerheight}
-\setlength{\headerheight}{120 pt}
+\newlength{\descheaderheight}
+\setlength{\descheaderheight}{(120 pt)*\showdesc}
 
 %%%%%%%%%%%%
 % Database %
@@ -198,13 +198,23 @@
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
+% The complete header height.
+% Uses the selected \descheaderheight and adds the rowheight of each additional enabled header row.
+% Used to substract the header height from the height of the page.
+\newlength{\headerheight}
+\setlength\headerheight{
+    \descheaderheight +
+    (\thislineheight+\extrarowheight+\arrayrulewidth)*
+    (\showtitle+\showsubtaskid+\showmaxpoints)
+}
+
 \renewcommand{\familydefault}{\sfdefault}
 \setlength\tabcolsep{0pt}
 % Clips the input string to fit into a box with the given height.
 % The width is also clipped and uses the \linewidth.
-% @param #1 the length, default \headerheight
+% @param #1 the length, default \descheaderheight
 % @param #2 the string
-\newcommand\clipstring[2][\headerheight]{%
+\newcommand\clipstring[2][\descheaderheight]{%
     \clipbox{%
         {\dimexpr((\width - (#1))/2)\relax} % chktex 8
         {\dimexpr((\height - \thislineheight)/2 + \extrarowheight)\relax}% chktex 8
@@ -231,7 +241,6 @@
 % and long text would not be usefull anyway
 % Use 1-1 and 1a-1 as keys in these cases
 %
-% TODO: adjust header to set height
 % TODO: include general info file
 % TODO: if showsubtaskid or showtitle are enabled it is not possible to disable all info cols
 % TODO: sort all length (setlength)
