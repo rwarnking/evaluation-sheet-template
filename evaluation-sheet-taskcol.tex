@@ -242,7 +242,6 @@
 % Use 1-1 and 1a-1 as keys in these cases
 %
 % TODO: include general info file
-% TODO: if showsubtaskid or showtitle are enabled it is not possible to disable all info cols
 % TODO: sort all length (setlength)
 % TODO: Fix cellcolor overdrawing lines
 
@@ -300,12 +299,21 @@
                     \addtocounter{subtasks}{1}%
                 }{}%
             }%
-            \checkfirstampersand%
-            \multicolumn{\value{subtasks}}{c|}{%
-                \clipstring[
-                    (\tablecellwidth+\tabcolsep+\tabcolsep)*\value{subtasks}-\tabcolsep-\tabcolsep
-                ]{\curtitle}%
-            }%
+            % Modified version of \checkfirstampersand to cope with no group information
+            % % https://comp.text.tex.narkive.com/OwRHjMSV/ifthen-multicolumn-typeout-tabular-problem
+            \ifthenelse{\equal{\value{first}}{\enable}}%
+            {\setcounter{first}{\disable}\addtocounter{subtasks}{-1}}{}%
+            % Check if atleast one subtask is present for the multicolumn
+            \xintifGt{\value{subtasks}}{0}%
+            {%
+                &%
+                \multicolumn{\value{subtasks}}{c|}{%
+                    \clipstring[%
+                        (\tablecellwidth+\tabcolsep+\tabcolsep)*%
+                        \value{subtasks}-\tabcolsep-\tabcolsep%
+                    ]{\curtitle}%
+                }%
+            }
         \fi%
     }%
     \checkfirstampersand%
@@ -315,35 +323,63 @@
 % Subtask row containing filler cells followed by the id of each subtask
 \newcommand{\printsubtaskrow}{%
     \setcounter{first}{\enable}%
+    % Add filler cells
     \printheadercell{\showname}{}{}%
     \printheadercell{\showstudy}{}{}%
     \printheadercell{\showpersonid}{}{}%
     \printheadercell{\showtutorgroupid}{}{}%
     \printheadercell{\showgroupid}{}{}%
     \printheadercell{\showdate}{}{}%
-    %
+    % Iterate all subtasks and add a multicolum for each of them
     \setcounter{subtasks}{0}%
     \DTLforeach*{assignments_db}% database label
-    {\curtask=\taskidKey, \curtitle=\titleKey,
-        \curpoints=\pointsKey, \curdesc=\descriptionKey}
+    {\curtask=\taskidKey, \curtitle=\titleKey,%
+        \curpoints=\pointsKey, \curdesc=\descriptionKey}%
     {%
+        % If subtasks is 0 the last multicolumn has ended and the next subtask can be processed
         \xintifEq{\value{subtasks}}{0}%
         {%
+            % Count identical subtasks
             \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
             \DTLforeach*{assignments_db}% database label
             {\tmptask=\taskidKey}{%
                 \expandafter\DTLsplitstring\expandafter{\tmptask}{-}{\beforepartB}{\afterpart}%
                 \IfStrEq{\beforepartA}{\beforepartB}%
-                {\addtocounter{subtasks}{1}}%
-                {}%
+                {\addtocounter{subtasks}{1}}{}%
             }%
-            \checkfirstampersand%
-            \multicolumn{\value{subtasks}}{c|}{%
-                % Redefine beforepartA since it is deleted by the ampersand
-                \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
-                \clipstring[
-                    (\tablecellwidth+\tabcolsep+\tabcolsep)*\value{subtasks}-\tabcolsep-\tabcolsep
-                ]{\beforepartA}%
+            % Modified version of \checkfirstampersand to cope with disabled group information
+            % https://comp.text.tex.narkive.com/OwRHjMSV/ifthen-multicolumn-typeout-tabular-problem
+            \ifthenelse{\equal{\value{first}}{\enable}}%
+            {%
+                \setcounter{first}{\disable}%
+                % Print value first cell
+                \clipstring[\tablecellwidth-1pt]{\beforepartA}%
+                % Check if an additional multicoulmn is needed
+                \xintifGt{\value{subtasks}}{1}%
+                {%
+                    \addtocounter{subtasks}{-1}%
+                    &%
+                    \multicolumn{\value{subtasks}}{c|}{%
+                        % Redefine beforepartA since it is deleted by the ampersand
+                        \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
+                        \clipstring[%
+                            (\tablecellwidth+\tabcolsep+\tabcolsep)*%
+                            \value{subtasks}-\tabcolsep-\tabcolsep%
+                        ]{\beforepartA}%
+                    }%
+                    \addtocounter{subtasks}{1}%
+                }{}%
+            }{%
+                % Default multicolumn when group information is enabled or it is not the first col
+                &%
+                \multicolumn{\value{subtasks}}{c|}{%
+                    % Redefine beforepartA since it is deleted by the ampersand
+                    \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
+                    \clipstring[%
+                        (\tablecellwidth+\tabcolsep+\tabcolsep)*%
+                        \value{subtasks}-\tabcolsep-\tabcolsep%
+                    ]{\beforepartA}%
+                }%
             }%
             \addtocounter{subtasks}{-1}%
         }{%
