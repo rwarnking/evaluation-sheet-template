@@ -21,6 +21,10 @@ tlmgr install pgf
 # Clip the informations to fit inside the table cells
 tlmgr install collectbox
 tlmgr install adjustbox
+# For string commands (for example equality tests)
+tlmgr install xstring
+# For dashed line
+tlmgr install arydshln
 
 printf "\n Installing dependencies (optional task packages)!"
 # Used to reduce distance between items in itemize (\setlist)

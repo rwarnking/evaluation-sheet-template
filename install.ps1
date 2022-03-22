@@ -21,6 +21,10 @@ Invoke-Expression "tlmgr install pgf"
 # Clip the informations to fit inside the table cells
 Invoke-Expression "tlmgr install collectbox"
 Invoke-Expression "tlmgr install adjustbox"
+# For string commands (for example equality tests)
+Invoke-Expression "tlmgr install xstring"
+# For dashed line
+Invoke-Expression "tlmgr install arydshln"
 
 Write-Host ""
 Write-Host "Installing dependencies (optional task packages)!"
