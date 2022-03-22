@@ -1,3 +1,12 @@
+% OBACHT: with the current implementation the tabularx has a limted amount of supported
+% columns (26), having more columns leads to wrong column width
+% OBACHT: newlines are not possible since the columns are all equally sized
+% and long text would not be usefull anyway
+% Use 1-1 and 1a-1 as keys in these cases
+%
+% TODO: include general info file
+% TODO: Fix cellcolor overdrawing lines
+% TODO: Add documentation and author
 \documentclass{article}
 
 %%%%%%%%%%%%
@@ -237,15 +246,6 @@
     }%
 }
 
-% OBACHT: with the current implementation the tabularx has a limted amount of supported
-% columns (26), having more columns leads to wrong column width
-% OBACHT: newlines are not possible since the columns are all equally sized
-% and long text would not be usefull anyway
-% Use 1-1 and 1a-1 as keys in these cases
-%
-% TODO: include general info file
-% TODO: Fix cellcolor overdrawing lines
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Header
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -461,7 +461,6 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add groups
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% TODO
 % Prints the task information and the points of the task as two columns.
 % Afterwards adds the point information for the task if enabled
 % @param the tasktitle
@@ -889,12 +888,11 @@
     %%%%%%%%%%%%%
     % Main Loop %
     %%%%%%%%%%%%%
+    \setcounter{lowerbound}{0}
     % Iterate all groups and create pages/tables for them
-    \forloop{pageidx}{0}{\value{pageidx} < \value{numpages}}{
-        \pgfmathparse{int ((\value{pageidx}+1)*\value{maxrows})}
+    \forloop{pageidx}{0}{\value{lowerbound} < \value{numrows}}{
+        \pgfmathparse{int (\value{lowerbound}+\value{maxrows})}
         \setcounter{upperbound}{\pgfmathresult}
-        \pgfmathparse{int ((\value{pageidx})*\value{maxrows})}
-        \setcounter{lowerbound}{\pgfmathresult}
         %
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
         \begin{tabularx}{\textwidth}{
@@ -907,13 +905,16 @@
             ;% chktex 26
             *{\value{asigncol}}{C|}C
         }%
-            \setcounter{currow}{1}%
+            \setcounter{currow}{0}%
             \printheader%
             %
             \DTLforeach*{groups_db}% database label
             {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
                 \curparticipants=\participantsKey, \lastsheet=\activeKey}%
             {%
+                \xintFor ##1 in \curparticipants \do {%
+                    \addtocounter{currow}{1}%
+                }%
                 \xintifGt{\value{currow}}{\value{lowerbound}}%
                 {%
                     \xintifGt{\value{currow}}{\value{upperbound}}%
@@ -921,13 +922,13 @@
                     {%
                         \xintifEq{\curtutorid}{\tutornumber}%
                         {%
+                            \xintFor ##1 in \curparticipants \do {%
+                                \addtocounter{lowerbound}{1}%
+                            }%
                             \creategroup%
                         }{}%
                     }%
                 }{}%
-                \xintFor ##1 in \curparticipants \do {%
-                    \addtocounter{currow}{1}%
-                }%
             }%
         \end{tabularx}
         % If no groups were found print a warning but still show assignments
@@ -940,7 +941,12 @@
                 really contains groups for tutor \tutornumber.
             }
         \fi
-        \clearpage
+        % Add a clearpage on all pages that are not the last
+        \pgfmathparse{\value{pageidx} + 1}%
+        \xintifLt{\value{upperbound}}{\value{numrows}}
+        {%
+            \clearpage
+        }{}%
     }
 
 \end{document}
