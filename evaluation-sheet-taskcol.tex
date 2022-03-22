@@ -157,9 +157,6 @@
 %%%%%%%%%%%%
 % Commands %
 %%%%%%%%%%%%
-% Remove extra margin left
-\setlength{\parindent}{0pt}
-
 % Thick Tabular Lines
 \makeatletter
 \newcommand{\thickhline}{%
@@ -183,10 +180,14 @@
   \ifcat_\ifnum0<0#1 _\else A\fi
 }
 
-% https://tex.stackexchange.com/questions/341198/
-\makeatletter
-\newcommand\tablecellwidth{\TX@col@width}
-\makeatother
+%%%%%%%%%%%%%%%%%%%%%%
+% Length definitions %
+%%%%%%%%%%%%%%%%%%%%%%
+% Remove extra margin left
+\setlength{\parindent}{0pt}
+\renewcommand{\familydefault}{\sfdefault}
+% Remove extra margin in tables
+\setlength\tabcolsep{0pt}
 
 % Save font size to be used in multicolumns
 \newlength{\thislineheight}
@@ -208,8 +209,21 @@
     (\showtitle+\showsubtaskid+\showmaxpoints)
 }
 
-\renewcommand{\familydefault}{\sfdefault}
-\setlength\tabcolsep{0pt}
+\makeatletter
+% Make tablecell width accessible
+% https://tex.stackexchange.com/questions/341198/
+\newcommand\tablecellwidth{\TX@col@width}
+% xstring addition that extracts the leading number from a string.
+% Used to get the assignment number from a subtask.
+% https://tex.stackexchange.com/questions/35250/
+% @param #1 The string
+% @returl \Result the macro containing the number
+\newcommand*\ExtractLeadingNumber[1]{%
+    \IfBeginWith{#1}{ }{\StrBehind{#1}{ }[\temp@@]}{\def\temp@@{#1}}%
+    \IfDecimal\temp@@{\def\Result{#1}}{\StrBefore{#1}{\@xs@afterdecimal}[\Result]}%
+}
+\makeatother
+
 % Clips the input string to fit into a box with the given height.
 % The width is also clipped and uses the \linewidth.
 % @param #1 the length, default \descheaderheight
@@ -223,18 +237,6 @@
     }%
 }
 
-\makeatletter
-% xstring addition that extracts the leading number from a string.
-% Used to get the assignment number from a subtask.
-% https://tex.stackexchange.com/questions/35250/
-% @param #1 The string
-% @returl \Result the macro containing the number
-\newcommand*\ExtractLeadingNumber[1]{%
-    \IfBeginWith{#1}{ }{\StrBehind{#1}{ }[\temp@@]}{\def\temp@@{#1}}%
-    \IfDecimal\temp@@{\def\Result{#1}}{\StrBefore{#1}{\@xs@afterdecimal}[\Result]}%
-}
-\makeatother
-
 % OBACHT: with the current implementation the tabularx has a limted amount of supported
 % columns (26), having more columns leads to wrong column width
 % OBACHT: newlines are not possible since the columns are all equally sized
@@ -242,7 +244,6 @@
 % Use 1-1 and 1a-1 as keys in these cases
 %
 % TODO: include general info file
-% TODO: sort all length (setlength)
 % TODO: Fix cellcolor overdrawing lines
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
