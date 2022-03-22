@@ -4,7 +4,6 @@
 % and long text would not be usefull anyway
 % Use 1-1 and 1a-1 as keys in these cases
 %
-% TODO: include general info file
 % TODO: Fix cellcolor overdrawing lines
 % TODO: Add documentation and author
 \documentclass{article}
@@ -948,5 +947,8 @@
             \clearpage
         }{}%
     }
-
+    % Allow to add further information at the end of the document
+    \IfFileExists{\semester_\coursename/additional_info.tex}{
+        \input{\semester_\coursename/additional_info.tex}
+    }{}
 \end{document}
