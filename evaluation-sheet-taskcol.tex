@@ -900,6 +900,9 @@
 
     \newcounter{numrows}
     \setcounter{numrows}{0}
+    % Number of rows added in the last loop
+    \newcounter{looprows}
+    \setcounter{looprows}{0}
 
     % Calculate the total number of participants that need to be printed.
     % Does only count groups of the current tutor.
@@ -909,9 +912,20 @@
     {
         \xintifEq{\curtutorid}{\tutornumber}%
         {%
+            \setcounter{looprows}{0}
             \xintFor ##1 in \curparticipants \do {%
                 \addtocounter{numrows}{1}
+                \addtocounter{looprows}{1}
             }
+            % Security check: If a group has more member as fit on one page the amount is adjusted.
+            \xintifGt{\value{looprows}}{\value{maxrows}}%
+            {%
+                \setcounter{maxrows}{\value{looprows}}
+                \textcolor{red}{
+                    WARNING\@: A group was found that has more member than fit on a page!
+                    Maxrows was adjusted accordingly.\newline
+                }
+            }{}
         }{}
     }
 
@@ -939,8 +953,9 @@
     % lower and upperbound.
     % Only the groups of the current tutor are printed!
     \forloop{lowerbound}{0}{\value{lowerbound} < \value{numrows}}{
-        \pgfmathparse{int (\value{lowerbound}+\value{maxrows})}
-        \setcounter{upperbound}{\pgfmathresult}
+        \setcounter{upperbound}{\value{lowerbound}}
+        \addtocounter{upperbound}{\value{maxrows}}%
+        \setcounter{looprows}{0}
         %
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
         \begin{tabularx}{\textwidth}{
@@ -974,7 +989,7 @@
                         \xintifEq{\curtutorid}{\tutornumber}%
                         {%
                             \xintFor ##1 in \curparticipants \do {%
-                                \addtocounter{lowerbound}{1}%
+                                \addtocounter{looprows}{1}%
                             }%
                             \creategroup%
                         }{}%
@@ -996,7 +1011,10 @@
         \xintifLt{\value{upperbound}}{\value{numrows}}
         {%
             \clearpage
-        }{}%
+        }{}%%
+        % Advance loop counter (but reduce by one since the loop intselft adds one)
+        \addtocounter{lowerbound}{-1}%
+        \addtocounter{lowerbound}{\value{looprows}}%
     }
     % Allow to add further information at the end of the document
     \IfFileExists{\semester_\coursename/additional_info.tex}{
