@@ -1,0 +1,21 @@
+taskid; title; points; description
+1a; ; 1; Calculation and Result;
+1b-1; ; 1; Calculation;
+1b-2; ; 1; Result;
+1c; ; 2; 2x Calculation;
+1d-1; ; 1; Calculation;
+1d-2; ; 1; Result;
+1e; ; 1; Explanation + Result;
+1f-1; ; 1; Explanation;
+1f-2; ; 1; Result;
+1; Assignment 1; 10; Sum;
+2a-1; ; 1; Calculation;
+2a-2; ; 1; Explanation;
+2a-3; ; 1; Result;
+2b-1; ; 2; Calculation;
+2b-2; ; 1; Explanation;
+2b-3; ; 1; Result;
+2c-1; ; 2; Algorithm;
+2c-2; ; 1; Result;
+2; Assignment 2; 10; Sum;
+3; ; 0; Bonusassignment;
