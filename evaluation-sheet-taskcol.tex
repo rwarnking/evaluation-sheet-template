@@ -1,11 +1,18 @@
+% This project allows you to create an evaluation sheet.
+% The table is automatically created an distributes the assignments on top of the table as columns.
+% The groups are aligned below each other as rows.
+% The data is read from .csv files that need to be present under the in this document specified
+% name. Obviously you can adjust these names to your liking.
+% Furthermore this project allows to customize the apperance of the sheet, all options can be
+% seen and adjusted in the -Arguments- section.
+%
 % OBACHT: with the current implementation the tabularx has a limted amount of supported
 % columns (26), having more columns leads to wrong column width
-% OBACHT: newlines are not possible since the columns are all equally sized
-% and long text would not be usefull anyway
-% Use 1-1 and 1a-1 as keys in these cases
+% OBACHT: newlines inside the tasks are not allowed since the columns are all equally sized
+% If you need multiple lines for one task use 1-1 and 1a-1 as keys of the subtask
 %
-% TODO: Fix cellcolor overdrawing lines
-% TODO: Add documentation and author
+% @author rwarnking
+% @licence MIT License
 \documentclass{article}
 
 %%%%%%%%%%%%
@@ -228,9 +235,9 @@
 }
 \makeatother
 
-% Clips the input string to fit into a box with the given height.
-% The width is also clipped and uses the \linewidth.
-% @param #1 the length, default \descheaderheight
+% Clips the input string to fit into a box with the given width.
+% The height is also clipped and uses the \thislineheight.
+% @param #1 the width, default \descheaderheight
 % @param #2 the string
 \newcommand\clipstring[2][\descheaderheight]{%
     \clipbox{%
@@ -240,6 +247,24 @@
         #2%
     }%
 }
+
+%%%%%%%%%%%%%%%%%%
+% Global Counter %
+%%%%%%%%%%%%%%%%%%
+% Saves the current particpant number in the current group
+\newcounter{personnum}
+% Saves the sheet info of the current particpant
+\newcounter{partsheet}
+% Saves the total group number for this tutor
+\newcounter{itergroups}
+\setcounter{itergroups}{0}%
+% Indicates if this column is the first column
+\newcounter{first}
+% Indicates if this group is the first one this page
+\newcounter{firstgroup}
+\setcounter{firstgroup}{\enable}%
+% Saves the amount of subtasks for this major task
+\newcounter{subtasks}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Header
@@ -269,8 +294,14 @@
     }{}%
 }
 
-% Title row containing filler cells followed by the title of each assignment
-\newcounter{subtasks}
+% Title row containing filler cells followed by the title of each assignment.
+% The title is displayed as a multirow element above all columns that are part of the
+% assignment. Therefore only major-assignments have a title (for example assignment 1).
+% To know how wide the multicolumn needs to be each task iterates all tasks and counts the
+% subtasks that belong to the current task, O(n^2).
+%
+% OBACHT: If no group information is displayed the first column is not part of a multicolumn,
+% since this command needs to follow an ampersand.
 \newcommand{\printtitlerow}{%
     \setcounter{first}{\enable}%
     \printheadercell{\showname}{}{}%
@@ -279,24 +310,25 @@
     \printheadercell{\showtutorgroupid}{}{}%
     \printheadercell{\showgroupid}{}{}%
     \printheadercell{\showdate}{}{}%
-    %
+    % Iterate all assignments
     \DTLforeach*{assignments_db}% database label
     {\curtask=\taskidKey, \curtitle=\titleKey,
         \curpoints=\pointsKey, \curdesc=\descriptionKey}
     {%
         \setcounter{subtasks}{0}%
+        % Process only major-tasks (whole numbers)
         \if\IsPositive{\curtask}%
             \DTLforeach*{assignments_db}% database label
             {\tmptask=\taskidKey}{%
                 % Get the leading number
                 \ExtractLeadingNumber{\tmptask}%
-                % Check if the number equals the current assignment
+                % Check if the number equals the current assignment, then add one
                 \IfStrEq{\curtask}{\Result}{%
                     \addtocounter{subtasks}{1}%
                 }{}%
             }%
             % Modified version of \checkfirstampersand to cope with no group information
-            % % https://comp.text.tex.narkive.com/OwRHjMSV/ifthen-multicolumn-typeout-tabular-problem
+            % https://comp.text.tex.narkive.com/OwRHjMSV/ifthen-multicolumn-typeout-tabular-problem
             \ifthenelse{\equal{\value{first}}{\enable}}%
             {\setcounter{first}{\disable}\addtocounter{subtasks}{-1}}{}%
             % Check if atleast one subtask is present for the multicolumn
@@ -304,19 +336,27 @@
             {%
                 &%
                 \multicolumn{\value{subtasks}}{c|}{%
+                    % Clip the string to fit into this cell
                     \clipstring[%
                         (\tablecellwidth+\tabcolsep+\tabcolsep)*%
                         \value{subtasks}-\tabcolsep-\tabcolsep%
                     ]{\curtitle}%
                 }%
-            }
+            }{}%
         \fi%
     }%
     \checkfirstampersand%
     \\ \hline
 }
 
-% Subtask row containing filler cells followed by the id of each subtask
+% Subtask row containing filler cells followed by the id of each subtask.
+% The id is displayed as a multirow element above all columns that are part of this
+% subtask (example: 1a-1, 1a-2 displayed: 1a).
+% To know how wide the multicolumn needs to be each subtask iterates all tasks and counts the
+% subtasks that have the same id, O(n^2).
+%
+% OBACHT: If no group information is displayed the first column is not part of a multicolumn,
+% since this command needs to follow an ampersand.
 \newcommand{\printsubtaskrow}{%
     \setcounter{first}{\enable}%
     % Add filler cells
@@ -357,7 +397,9 @@
                     &%
                     \multicolumn{\value{subtasks}}{c|}{%
                         % Redefine beforepartA since it is deleted by the ampersand
-                        \expandafter\DTLsplitstring\expandafter{\curtask}{-}{\beforepartA}{\afterpart}%
+                        \expandafter\DTLsplitstring\expandafter{\curtask}{-}%
+                            {\beforepartA}{\afterpart}%
+                        % Clip the string to fit into this cell
                         \clipstring[%
                             (\tablecellwidth+\tabcolsep+\tabcolsep)*%
                             \value{subtasks}-\tabcolsep-\tabcolsep%
@@ -379,6 +421,8 @@
             }%
             \addtocounter{subtasks}{-1}%
         }{%
+            % Reduce the subtask counter, such that as many loopiterations are ignored as the
+            % multicolumn is wide
             \addtocounter{subtasks}{-1}%
         }%
     }%
@@ -386,7 +430,9 @@
     \\ \hline
 }
 
-% Description row containing filler cells followed by the description of each assignment
+% Description row containing filler cells followed by the description of each assignment.
+% All assignments are iterated and their description is printed into the current cell.
+% The content is clipped and rotated by 90 degree.
 \newcommand{\printdescrow}{%
     \setcounter{first}{\enable}%
     \printheadercell{\showname}{}{}%
@@ -413,7 +459,8 @@
     \\ \hline
 }
 
-% Points row containing filler cells followed by the points of each assignment
+% Points row containing filler cells followed by the points of each assignment.
+% All assignments are iterated and their pointvalue is clipped and printed.
 \newcommand{\printpointsrow}{%
     \setcounter{first}{\enable}%
     \printheadercell{\showname}{}{}%
@@ -435,6 +482,10 @@
     \\ \thickhline%
 }
 
+% Helper command to print a cell if the given command is enabled.
+% @param #1 Value that should be tested against \enable
+% @param #2 english cell content
+% @param #3 other language cell content
 \newcommand{\printheadercell}[3]{%
     \ifthenelse{\equal{#1}{\enable}}%
     {%
@@ -448,6 +499,10 @@
     }{}%
 }
 
+% Checks if this ampersand would be the first in the current row.
+% If so it is not printed otherwise a ampersand is added.
+% Helps using ampersands in loops.
+% Uses the first counter which needs to be set accordingly.
 \newcommand{\checkfirstampersand}{%
     \ifthenelse{\equal{\value{first}}{\enable}}%
     {\setcounter{first}{\disable}}{&}%
@@ -456,31 +511,24 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Add groups
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Prints the task information and the points of the task as two columns.
-% Afterwards adds the point information for the task if enabled
-% @param the tasktitle
-% @param the taskdescription
-% @param the points of the task
-% @param the task index (row)
-% @param the max group index
-\newcounter{personnum}
-\newcounter{y}
-\newcounter{tmpcounter}
-\newcounter{itergroups}
-\setcounter{itergroups}{0}%
-\newcounter{first}
-\newcounter{firstgroup}
-\setcounter{firstgroup}{\enable}%
+% Prints all enabled group information for each member as rows.
+% Iterates all participants and calls \printrow for them.
+% Does mark participants that are not part of the group for the specified sheet (\deadrow).
+% Using \showdeadrow dead rows can be hidden entirely.
+% Needs to be defined:
+% \curparticipants, \lastsheet
+\newcounter{deadrow}
 \newcommand{\creategroup}{%
     \setcounter{personnum}{1}%
     \addtocounter{itergroups}{1}%
     \setcounter{first}{\enable}%
     %
     \xintFor ##1 in \curparticipants \do {%
+        % Get the sheet number of this participant by using the iteration index to access lastsheet
         \foreach \n [count=\nn] in \lastsheet {%
             \xintifEq{\nn}{\value{personnum}}%
             {%
-                \setcounter{y}{\n}%
+                \setcounter{partsheet}{\n}%
             }{}%
         }%
         \addtocounter{personnum}{1}%
@@ -489,17 +537,17 @@
         \setcounter{deadrow}{\enable}%
         % Check the sheet at which the current member joined or dropped out
         % Check if the member dropped out or joined
-        \xintifLt{\value{y}}{0}%
+        \xintifLt{\value{partsheet}}{0}%
         {%
             % Get absolute value and compare to current sheetnumber
-            \xintifGt{\sheetnumber*-1}{\value{y}}%
+            \xintifGt{\sheetnumber*-1}{\value{partsheet}}%
             % If the member did not yet drop out - the row is alive
             {\setcounter{deadrow}{\disable}}%
             % Otherwise the member is not part of the group for this sheet
             {}% Do not change value since the row counts as dead from the start
         }{%
             % Compare to current sheetnumber
-            \xintifLt{\sheetnumber}{\value{y}}%
+            \xintifLt{\sheetnumber}{\value{partsheet}}%
             % The member is not part of the group for this sheet
             {\setcounter{deadrow}{2}}% Mark row as not yet visible
             % Otherwise the row is alive
@@ -521,7 +569,15 @@
     }%
 }
 
+% Prints one row using the given parameter as source of information.
+% Also prints points of the current particpant if enabled.
+% Checks these commands for enabled group informations:
+% \showname, \showstudy, \showpersonid, \showtutorgroupid, \showgroupid, \showdate
+% Does not print identical values into a cell multiple times.
+%
+% @param #1 The participant id (used to access \personidKey)
 \newcommand{\printrow}[1]{%
+    % Print a rule ahead of each group that is not the first
     \ifthenelse{\equal{\value{first}}{\enable}}%
     {%
         \ifthenelse{\equal{\value{firstgroup}}{\enable}}%
@@ -564,7 +620,7 @@
         \isactive{\printonce{\printdate}}%
         &%
     }{}%
-    % Add missing ampersands and points if enabled
+    % Add missing ampersands and points if enabled, by iterating all assignments
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey}%
     {%
@@ -575,8 +631,8 @@
 }
 
 % This function is used to print only one value per cell
-% Needs personnum to contain 2 for the first participant
-% Needs showrowlinesall to be defined
+% Needs personnum to contain 2 for the first participant (starts with 1 and is incremented by 1)
+% Needs \showrowlinesall to be defined
 % @param #1 The string to print
 \newcommand{\printonce}[1]{%
     \ifthenelse{\equal{\showrowlinesall}{\enable}}%
@@ -587,16 +643,16 @@
 }
 
 % Check if a participant is active by comparing its entry sheet to the current sheetnumber
-% Needs \y to be defined as the entry sheet
-% @param content The value that should be printed if the participant is active
+% Needs \partsheet to be defined as the entry sheet
+% @param #1 The value that should be printed if the participant is active
 \newcommand{\isactive}[1]{%
     % If the person is not yet in the group
-    \xintifLt{\sheetnumber}{\value{y}}%
+    \xintifLt{\sheetnumber}{\value{partsheet}}%
     {}{%
         % If the person left the group
-        \xintifLt{\value{y}}{0}%
+        \xintifLt{\value{partsheet}}{0}%
         {%
-            \xintifGt{\sheetnumber*-1}{\value{y}}%
+            \xintifGt{\sheetnumber*-1}{\value{partsheet}}%
             {#1}{%
                 % Allow to hide or show information of dead row
                 \ifthenelse{\equal{\showdeadinfo}{\enable}}%
@@ -606,14 +662,14 @@
     }%
 }
 
-% Iterate and print all participant names given.
-% Each in his own line. The participants should be the members of one group.
-% Needs \curparticipants to be defined
+% Print the first and last name of the given participant.
+% If enabled the names are shortend to the initials.
+% @param #1 The participant id (used to access \personidKey)
 \newcommand{\printnames}[1]{%
     \DTLgetcolumnindex{\partidcolumn}{participants_db}{\personidKey}%
     % Use this instead of DTLgetrowindex to expand the argument
-    \xdtlgetrowindex{\partrow}{participants_db}{\partidcolumn}{#1}% groupindex
-
+    \xdtlgetrowindex{\partrow}{participants_db}{\partidcolumn}{#1}% participant id
+    %
     \ifthenelse{\equal{\shortenfirstname}{\enable}}%
     {%
         % Get column index of firstname
@@ -641,9 +697,9 @@
     }%
 }
 
-% Iterate and print the study fields of the participants given.
-% The participants should be the members of one group.
-% Needs \curparticipants to be defined
+% Iterate and print the study fields of the given participant.
+% If enabled the field of study is shortend to the initials.
+% @param #1 The participant id (used to access \personidKey)
 \newcommand{\printstudy}[1]{%
     \ifthenelse{\equal{\shortenfieldofstudy}{\enable}}%
     {%
@@ -668,24 +724,23 @@
     }%
 }
 
-% Iterate and print the identification numbers of the participants given.
-% The participants should be the members of one group.
-% Needs \curparticipants to be defined
+% Iterate and print the identification number of the given participant.
+% @param #1 The participant id
 \newcommand{\printpersonid}[1]{%
     \hspace*{\paddingLR}#1\hspace*{\paddingLR}%
 }
 
-% Print the tutor group id
+% Print the tutor group id (itergroups).
 \newcommand{\printtutorgroupid}{%
     \hspace*{\paddingLR}\arabic{itergroups}\hspace*{\paddingLR}%
 }
 
-% Print the group id
+% Print the group id.
 \newcommand{\printgroupid}{%
     \hspace*{\paddingLR}\curgroupid{}\hspace*{\paddingLR}%
 }
 
-% Print the day and time for the currently processed slot
+% Print the day and time for the currently processed slot.
 \newcommand{\printdate}{%
     \hspace*{\paddingLR}\curdate{}\hspace*{\paddingLR}%
 }
@@ -693,14 +748,12 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Points
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Checks if a group has no active members for this sheet.
-% If this is the case the column is disabled and colored as disabled.
-% The check is done by iterating all members and checking their entry date against the current
-% sheet number.
-% Expects \lastsheet and \curgroupid to be defined.
-% @param taskId The index of the processed task.
-\newcounter{deadrow}
-\newcounter{deadgroup}
+% Print the point value of the given task using the current group id.
+% The value is clipped to fit the surrounding cell.
+% Checks if the row is marked as dead or points should not be visible.
+% Expects \curgroupid to be defined.
+%
+% @param #1 The index of the processed task.
 \newcommand{\printpoints}[1]{%
     % If the row is dead then mark it as such, otherwise print the content
     \xintifEq{\value{deadrow}}{\enable}%
@@ -725,22 +778,13 @@
     }%
 }
 
-% Calculate the pointsum for the complete sheet (all full assignments) (Is done at startup)
-\newcounter{complsum}
-\setcounter{complsum}{0}
-\DTLforeach*{assignments_db} % database label
-{\curtask=\taskidKey, \curpoints=\pointsKey}
-{
-    \if\IsPositive{\curtask}%
-        \addtocounter{complsum}{\curpoints}
-    \fi
-}
-
-% Counter for the pointsum
-\newcounter{pointsum}
-% Print the current pointsum and color the cell depending on
+% Iterates all assignments and sums the values of major assignments.
+% The sum is printed while the cell is colored depending on
 % the relation to the max points possible.
-% Expects \lastsheet and \curgroupid to be defined.
+% The value is clipped to fit the surrounding cell.
+% Checks if the row is marked as dead or points should not be visible.
+% Expects \curgroupid to be defined.
+\newcounter{pointsum}
 \newcommand{\printpointsum}{%
     % If the row is dead then mark it as such, otherwise print the content
     \xintifEq{\value{deadrow}}{\enable}%
@@ -788,6 +832,19 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Preprocessing
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Calculate the pointsum for the complete sheet (all full assignments) (Is done at startup)
+\newcounter{complsum}
+\setcounter{complsum}{0}
+\DTLforeach*{assignments_db} % database label
+{\curtask=\taskidKey, \curpoints=\pointsKey}
+{
+    \if\IsPositive{\curtask}%
+        \addtocounter{complsum}{\curpoints}
+    \fi
+}
+
+% Calculate the number of columns needed for the group information,
+% by checking which columns are enabled.
 \newcommand{\getcolumcount}{%
     \newcounter{infocols}
     \setcounter{infocols}{0}
@@ -829,7 +886,7 @@
     \newcounter{lowerbound}
     \newcounter{upperbound}
 
-    % Calculate the number maximum number of rows that can fit on one page
+    % Calculate the maximum number of rows that can fit on one page
     % Use \baselineskip as row height - https://tex.stackexchange.com/questions/119228/
     % Use \textheight as total space available - https://tex.stackexchange.com/questions/101829/
     % Use \extrarowheight as table padding - https://tex.stackexchange.com/questions/31672/
@@ -844,13 +901,14 @@
     \newcounter{numrows}
     \setcounter{numrows}{0}
 
-    % Calculate the total number of groups
+    % Calculate the total number of participants that need to be printed.
+    % Does only count groups of the current tutor.
+    % OBACHT: This does also count participants that joined the group later on!
     \DTLforeach*{groups_db} % database label
     {\curtutorid=\tutoridKey, \curparticipants=\participantsKey}
     {
         \xintifEq{\curtutorid}{\tutornumber}%
         {%
-            % Care this does also count participants that joined the group later on
             \xintFor ##1 in \curparticipants \do {%
                 \addtocounter{numrows}{1}
             }
@@ -863,29 +921,24 @@
     \newcounter{asigncol}
     \setcounter{asigncol}{0}
     \getcolumcount
-
+    % Get the total number of assignments
     \DTLforeach*{assignments_db} % database label
     {}
     {
         \addtocounter{asigncol}{1}
     }
 
-    %%%%%%%%%%%%%%%
-    % Page counts %
-    %%%%%%%%%%%%%%%
-    % Variable to identify the table currently processed
-    \newcounter{pageidx}
-    \newcounter{numpages}
-    % Precalculate the current page number
-    \setcounter{numpages}{\value{numrows}/\value{maxrows}}
-    \addtocounter{numpages}{1}
-
     %%%%%%%%%%%%%
     % Main Loop %
     %%%%%%%%%%%%%
-    \setcounter{lowerbound}{0}
-    % Iterate all groups and create pages/tables for them
-    \forloop{pageidx}{0}{\value{lowerbound} < \value{numrows}}{
+    % Iterate all groups and create pages/tables for them.
+    % The loop starts with lowerbound = 0 and iterates until all rows are printed.
+    % Each page/table prints as many participants as allowed by the upperbound,
+    % (lowerbound + maxrows per page).
+    % For each table all groups are iterated, but the currow value needs to be inside the
+    % lower and upperbound.
+    % Only the groups of the current tutor are printed!
+    \forloop{lowerbound}{0}{\value{lowerbound} < \value{numrows}}{
         \pgfmathparse{int (\value{lowerbound}+\value{maxrows})}
         \setcounter{upperbound}{\pgfmathresult}
         %
@@ -907,9 +960,12 @@
             {\curgroupid=\groupidKey, \curtutorid=\tutoridKey, \curdate=\dateKey,%
                 \curparticipants=\participantsKey, \lastsheet=\activeKey}%
             {%
+                % To check if the current group would fit on the rest of the page,
+                % add the number of participants beforehand
                 \xintFor ##1 in \curparticipants \do {%
                     \addtocounter{currow}{1}%
                 }%
+                % Check for bounds and mark first group of the page (for hline)
                 \xintifGt{\value{currow}}{\value{lowerbound}}%
                 {%
                     \xintifGt{\value{currow}}{\value{upperbound}}%
@@ -937,7 +993,6 @@
             }
         \fi
         % Add a clearpage on all pages that are not the last
-        \pgfmathparse{\value{pageidx} + 1}%
         \xintifLt{\value{upperbound}}{\value{numrows}}
         {%
             \clearpage
@@ -945,6 +1000,6 @@
     }
     % Allow to add further information at the end of the document
     \IfFileExists{\semester_\coursename/additional_info.tex}{
-        \input{\semester_\coursename/additional_info.tex}
+        \input{\semester_\coursename/additional_info.tex}% chktex 2
     }{}
 \end{document}
