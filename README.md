@@ -10,6 +10,11 @@ This is a LaTeX template to generate evaluation sheets.
 Given data about the participants and the assignments, this template allows to
 generate evaluation sheets with one of two layouts.
 
+<p float="left">
+  <img src="docs/images/evaluation-sheet-taskcol.png" alt="evaluation sheet task rows" width="47%" />
+  <img src="docs/images/evaluation-sheet-taskcol.png" alt="evaluation sheet task columns" width="47%" />
+</p>
+
 ## Table of Contents
 1. [List of Features](#list-of-features)
 1. [Installation](#installation)
