@@ -50,6 +50,9 @@
 % Used for displaying code inside the assignments (used for \lstset)
 \usepackage{listings}
 
+% ChkTeX (linter) will ignore material within this environment
+\newenvironment{ignore}{}{}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1017,7 +1020,9 @@
         \addtocounter{lowerbound}{\value{looprows}}%
     }
     % Allow to add further information at the end of the document
-    \IfFileExists{\semester_\coursename/additional_info.tex}{
-        \input{\semester_\coursename/additional_info.tex}% chktex 2
-    }{}
+    \begin{ignore}
+        \IfFileExists{\semester_\coursename/additional_info.tex}{
+            \input{\semester_\coursename/additional_info.tex}
+        }{}
+    \end{ignore}
 \end{document}
