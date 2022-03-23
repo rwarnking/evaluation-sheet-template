@@ -47,8 +47,13 @@ jobs:
       ####################
       # Run the compiler #
       ####################
-      - name: Compile LaTeX document
+      - name: Compile taskrow document
         uses: xu-cheng/latex-action@v2
         with:
           root_file: "evaluation-sheet.tex"
+          glob_root_file: true
+      - name: Compile taskcol document
+        uses: xu-cheng/latex-action@v2
+        with:
+          root_file: "evaluation-sheet-taskcol.tex"
           glob_root_file: true
