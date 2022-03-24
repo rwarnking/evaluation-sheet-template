@@ -56,6 +56,8 @@ These packages are needed:
 - [tikz](https://www.ctan.org/pkg/pgf)
 - [adjustbox](https://www.ctan.org/pkg/adjustbox) for `trimclip`
     - Requires: [collectbox](https://www.ctan.org/pkg/collectbox)
+- [xstring](https://ctan.org/pkg/xstring)
+- [arydshln](https://ctan.org/pkg/arydshln)
 
 Required if used in the tasks:
 - [listings](https://www.ctan.org/pkg/listings)
@@ -69,7 +71,9 @@ These packages are also needed but should usually be installed by default:
 
 ## Usage
 
-Simply compile the `evaluation-sheet.tex` file to PDF.
+Decide which layout you want to use (tasks as columns or as rows) and
+compile the corresponding `.tex` file
+(`evaluation-sheet.tex` | `evaluation-sheet-taskcol.tex`) to a PDF.
 
 If you want to compile multiple sheets at once you can use the compile script:
 [bash](https://github.com/rwarnking/evaluation-sheet-template/blob/main/compile_all.sh) |
@@ -78,7 +82,7 @@ If you want to compile multiple sheets at once you can use the compile script:
 These expect a source folder in which the sheet information is saved.
 After executing the command, the script tries to automatically compile all found sheets to
 the corresponding PDFs. It is also possible to specify the tutor-id for which to compile
-the sheets. For more information run `.\compile_all.[sh|ps1] -help`
+the sheets as well as which layout to use. For more information run `.\compile_all.[sh|ps1] -h`.
 
 ## Contributing
 
@@ -92,4 +96,4 @@ as well as a styleguide.
 Up until now there are no further contributors other than the repository creator.
 
 ## License
-This project is licensed under the [MIT License](LICENSE)
+This project is licensed under the [MIT License](LICENSE).

@@ -4,8 +4,6 @@
 ###########
 FileName="evaluation-sheet"
 SheetName="sheet_"
-TexName="${FileName}.tex"
-PdfName="${FileName}.pdf"
 changes=()
 
 ErrorCounter=0
@@ -35,11 +33,15 @@ do
         -h|--help) help=1; break;;
         -p|--points) points=1;;
         -o|--override) override=1;;
+        -c|--cols) FileName="evaluation-sheet-taskcol";;
     esac
     if [[ "$var" =~ ^[0-9]+$ ]] ; then
         TutorList+=(${var})
     fi
 done
+
+TexName="${FileName}.tex"
+PdfName="${FileName}.pdf"
 
 ###################################################################################################
 # Functions
@@ -168,12 +170,14 @@ if [[ "$help" -eq 1 ]]; then
         SrcFolder (first parameter): The folder in which the sheets can be found
         TutorList (all number parameter): Allows to process multiple tutors at once (otherwise current setting is used)
         --override, -o Override files if they are already present
+        --cols, -c Use evaluation-sheet-taskcol.tex (tasks in columns, default is tasks in rows)
         --points, -p If this parameter is given 'display points' is enabled otherwise the points are not used
         --help, -h Shows how to use this script
 
     Examples for invoking compilation:
         .\compile_all.ps1 2018-19_example-coursename-1
         .\compile_all.ps1 2018-19_example-coursename-1 -o
+        .\compile_all.ps1 2018-19_example-coursename-1 --cols -o
         .\compile_all.ps1 2018-19_example-coursename-1 21 1 2 3
     "
 elif [[ "$SrcFolder" ]]; then

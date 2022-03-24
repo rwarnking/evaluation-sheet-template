@@ -10,14 +10,21 @@ param(
     [switch]$override,
 
     [Parameter()]
-    [switch]$help,
+    [switch]$points,
 
     [Parameter()]
-    [switch]$points
+    [switch]$cols,
+
+    [Parameter()]
+    [switch]$help
 )
 
 # Globals
 $FileName = "evaluation-sheet"
+if ($cols.IsPresent)
+{
+    $FileName = "evaluation-sheet-taskcol"
+}
 $SheetName = "sheet_"
 $TexName = -join($FileName, ".tex")
 $PdfName = -join($FileName, ".pdf")
@@ -202,12 +209,14 @@ if ($help.IsPresent) {
         -SrcFolder The folder in which the sheets can be found
         -TutorList Allows to process multiple tutors at once (otherwise current setting is used)
         -override, -o Override files if they are already present
+        -cols, -c Use evaluation-sheet-taskcol.tex (tasks in columns, default is tasks in rows)
         -points, -p If this parameter is given 'display points' is enabled otherwise the points are not used
         -help, -h Shows how to use this script
 
     Examples for invoking compilation:
         .\compile_all.ps1 2018-19_example-coursename-1
         .\compile_all.ps1 2018-19_example-coursename-1 -o
+        .\compile_all.ps1 2018-19_example-coursename-1 -cols -o
         .\compile_all.ps1 2018-19_example-coursename-1 -TutorList (1,2)
     "
 } elseif ($SrcFolder) {
