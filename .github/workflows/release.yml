@@ -146,7 +146,7 @@ jobs:
       # Checkout the code base
       - name: Checkout
         uses: actions/checkout@v2
-      # Upload
+      # Upload layout: task rows
       - name: Upload
         uses: actions/upload-release-asset@v1.0.1
         env:
@@ -155,4 +155,14 @@ jobs:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
           asset_path: ./evaluation-sheet.tex
           asset_name: evaluation-sheet.tex
+          asset_content_type: text/plain
+      # Upload layout: task cols
+      - name: Upload
+        uses: actions/upload-release-asset@v1.0.1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create_release.outputs.upload_url }}
+          asset_path: ./evaluation-sheet-taskcol.tex
+          asset_name: evaluation-sheet-taskcol.tex
           asset_content_type: text/plain
