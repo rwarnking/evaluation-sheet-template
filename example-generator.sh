@@ -1,5 +1,5 @@
 #!/bin/bash
-TgtFoler="2018_example-coursename-3"
+TgtFolder="2018_example-coursename-3"
 TotalParticipants=30
 sheets=4
 tutorcount=2
@@ -13,10 +13,16 @@ function Add-Column {
     printf "$1$sep" >> $FileName
 }
 
+# Create if not present
+if [[ !(-d ./$TgtFolder) ]]; then
+    # Create data folder if not existent and hide console output
+    mkdir -p ./$TgtFolder
+fi
+
 ###################################################################################################
 # participants.csv
 ###################################################################################################
-FileName="participants.csv"
+FileName="./$TgtFolder/participants.csv"
 
 # The columns and default values
 title=""
@@ -83,7 +89,7 @@ done
 ###################################################################################################
 # groups.csv
 ###################################################################################################
-FileName="groups.csv"
+FileName="./$TgtFolder/groups.csv"
 printf "tutorid; groupid; date; participants; droppedout;\n" >> $FileName
 
 # Create an arbitrary number of group with a random groupsize of upto four
@@ -217,7 +223,7 @@ taskrowoptions=(
 for (( s=1; s<=$sheets; s++ ))
 do
     # Create name and push header to the file
-    FileName="sheet_0$s.csv"
+    FileName="./$TgtFolder/sheet_0$s.csv"
     printf "taskid; title; points; description;\n" >> $FileName
 
     subtasks=0
