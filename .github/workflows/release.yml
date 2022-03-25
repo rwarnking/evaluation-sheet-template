@@ -20,7 +20,7 @@ jobs:
   ####################
   create_tag:
     # Name the Job
-    name: Create the tag
+    name: Create the Tag
     # Set the agent to run on
     runs-on: ubuntu-latest
 
@@ -31,13 +31,6 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
-      # Get last commit message
-      - name: Show commit message
-        run: echo "${{ github.event.head_commit.message }}"
-      - name: Set commit message to var
-        run: echo "commitmsg=${{ github.event.head_commit.message }}" >> $GITHUB_ENV
-      - name: Show var
-        run: echo "${{ env.commitmsg }}"
       # Get last tag
       # https://github.com/marketplace/actions/get-latest-tag
       - name: 'Get Previous tag'
@@ -57,21 +50,20 @@ jobs:
           git config --global user.name 'rwarnking'
           git config --global user.email 'rwarnking@users.noreply.github.com'
       # Add and push tag
-      - name: Check for Major version
-        if: contains(env.commitmsg , 'Major:')
+      - name: Datermine version (Major, Minor, Patch)
+        env:
+          COMMITMSG: ${{ github.event.head_commit.message }}
         run: |
+          if [[ "$COMMITMSG" =~ ^Major: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_major }} -m "New version ${{ steps.semvers.outputs.v_major }}"
           git push origin ${{ steps.semvers.outputs.v_major }}
-      - name: Check for Minor version
-        if: contains(env.commitmsg , 'Minor:')
-        run: |
+          elif [[ "$COMMITMSG" =~ ^Minor: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_minor }} -m "New version ${{ steps.semvers.outputs.v_minor }}"
           git push origin ${{ steps.semvers.outputs.v_minor }}
-      - name: Check for Patch
-        if: contains(env.commitmsg , 'Patch:')
-        run: |
+          elif [[ "$COMMITMSG" =~ ^Patch: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_patch }} -m "New version ${{ steps.semvers.outputs.v_patch }}"
           git push origin ${{ steps.semvers.outputs.v_patch }}
+          fi
 
   ##################
   # Create release #

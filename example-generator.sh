@@ -10,11 +10,11 @@ sep=";";
 
 # Helper function to add one column value to the csv
 function Add-Column {
-    printf "$1$sep" >> $FileName
+    printf '%s%s ' "$1" "$sep" >> "$FileName"
 }
 
 # Create if not present
-if [[ !(-d ./$TgtFolder) ]]; then
+if [[ ! (-d ./$TgtFolder) ]]; then
     # Create data folder if not existent and hide console output
     mkdir -p ./$TgtFolder
 fi
@@ -44,38 +44,42 @@ studyList=("of Science" "of Arts" "of Laws" "of Philosophy")
 # Generate n random ids with lenght of 6
 min=111111
 max=999999
-ids=($(shuf -i $min-$max -n $TotalParticipants))
+ids=()
+while IFS='' read -r line; do ids+=("$line"); done < <(shuf -i $min-$max -n $TotalParticipants)
 
-namenumbers=($(shuf -i 1-$TotalParticipants -n $TotalParticipants))
+namenumbers=()
+while IFS='' read -r line; do namenumbers+=("$line"); done < <(shuf -i 1-$TotalParticipants -n $TotalParticipants)
 
 # Print header
-printf "Anrede;Titel;Vorname;Nachname;Titel2;" >> $FileName
-printf "Nutzernamen;Privatadr;Privatnr;E-Mail;Anmeldedatum;" >> $FileName
-printf "Studiengaenge;Matrikelnr;Bemerkung\n" >> $FileName
+{
+    printf "Anrede; Titel; Vorname; Nachname; Titel2; "
+    printf "Nutzernamen; Privatadr; Privatnr; E-Mail; Anmeldedatum; "
+    printf "Studiengaenge; Matrikelnr; Bemerkung\n"
+} >> $FileName
 
 # Main loop iterating all participants
-for (( i=0; i<$TotalParticipants; i++ ))
+for (( i=0; i<TotalParticipants; i++ ))
 do
     # Get random salutation
-    index=$(( $RANDOM % ${#salutationList[@]} ))
+    index=$(( RANDOM % ${#salutationList[@]} ))
     salutation=${salutationList[$index]}
     # Construct the field of study value
-    index=$(( $RANDOM % ${#degreeList[@]} ))
+    index=$(( RANDOM % ${#degreeList[@]} ))
     fieldofstudy=${degreeList[$index]}
-    index=$(( $RANDOM % ${#studyList[@]} ))
+    index=$(( RANDOM % ${#studyList[@]} ))
     fieldofstudy="$fieldofstudy ${studyList[$index]}"
     # Get random semester number
-    index=$(( $RANDOM % 20 + 1))
+    index=$(( RANDOM % 20 + 1))
     fieldofstudy="$fieldofstudy, $index"
     # Add leading zeros to the namenumber
-    tmp=$(printf "%0*d" ${#TotalParticipants} ${namenumbers[$i]})
+    tmp=$(printf "%0*d" ${#TotalParticipants} "${namenumbers[$i]}")
     # Print all columns of the current row
     Add-Column "$salutation"
     Add-Column "$title"
     Add-Column "${firstname}${tmp}"
     Add-Column "${lastname}${tmp}"
     Add-Column "$title2"
-    Add-Column "$acountname"
+    Add-Column "$accountname"
     Add-Column "$address"
     Add-Column "$mobilenumber"
     Add-Column "${lastname}${tmp}$email"
@@ -95,9 +99,9 @@ printf "tutorid; groupid; date; participants; droppedout;\n" >> $FileName
 # Create an arbitrary number of group with a random groupsize of upto four
 members=0
 groupList=()
-for (( i=0; i<$TotalParticipants; i+=members ))
+for (( i=0; i<TotalParticipants; i+=members ))
 do
-    rand=$(( $RANDOM % 100 ))
+    rand=$(( RANDOM % 100 ))
     if [[ $rand -lt 10 ]]; then
         members=4
     elif [[ $rand -lt 25 ]]; then
@@ -105,7 +109,7 @@ do
     else
         members=2
     fi
-    groupList+=($members)
+    groupList+=("$members")
 done
 
 dateList=(
@@ -118,11 +122,14 @@ dateList=(
 # Get a list of indices to access the group dates (sorted)
 length=${#dateList[@]}
 ((length-=1))
-dateidx=($(shuf -i 0-${length} -n ${#groupList[@]} | sort -n))
+dateidx=()
+while IFS='' read -r line; do dateidx+=("$line"); done < <(shuf -i 0-${length} -n ${#groupList[@]} | sort -n)
+
 # Get a list of indices to access the participant ids
 length=${#ids[@]}
 ((length-=1))
-idsidx=($(shuf -i 0-${length} -n $TotalParticipants))
+idsidx=()
+while IFS='' read -r line; do idsidx+=("$line"); done < <(shuf -i 0-${length} -n $TotalParticipants)
 
 # Add a row to the csv for each group
 start=0
@@ -130,7 +137,7 @@ end=0
 for (( i=0; i<${#groupList[@]}; i++ ))
 do
     # Assign a random tutornumber
-    tutor=$(( $RANDOM % $tutorcount + 1 ))
+    tutor=$(( RANDOM % tutorcount + 1 ))
     Add-Column "$tutor"
     # Add groupnumber
     Add-Column "$i"
@@ -148,12 +155,12 @@ do
         idx=${idsidx[$j]}
         partarray+="${ids[$idx]}"
         # Add a random number to indicate if the participant droped out and during which sheet
-        rand=$(( $RANDOM % 100 ))
+        rand=$(( RANDOM % 100 ))
         if [[ $rand -lt 10 ]]; then
-            sheet=$(( $RANDOM % $sheets ))
+            sheet=$(( RANDOM % sheets ))
             droparray+="$sheet"
         elif [[ $rand -lt 20 ]]; then
-            sheet=$(( $RANDOM % $sheets ))
+            sheet=$(( RANDOM % sheets ))
             droparray+="-$sheet"
         else
             # Participant did not drop out and was part of this group from the beginning
@@ -164,8 +171,8 @@ do
             droparray+=","
         fi
     done
-    Add-Column "{${partarray[@]}}"
-    Add-Column "{${droparray[@]}}"
+    Add-Column "{${partarray[*]}}"
+    Add-Column "{${droparray[*]}}"
     printf "\n" >> $FileName
 done
 
@@ -193,10 +200,10 @@ function Add-Subtaskrow {
     Add-Column "${subpoints[$j]}"
     # Randomized description column
     if [[ $taskcols -eq 1 ]]; then
-        index=$(( $RANDOM % ${#taskcoloptions[@]} ))
+        index=$(( RANDOM % ${#taskcoloptions[@]} ))
         Add-Column "${taskcoloptions[$index]}"
     else
-        index=$(( $RANDOM % ${#taskrowoptions[@]} ))
+        index=$(( RANDOM % ${#taskrowoptions[@]} ))
         Add-Column "${taskrowoptions[$index]}"
     fi
     printf "\n" >> $FileName
@@ -209,18 +216,18 @@ letters=({a..z})
 # Text options for the task descriptions
 taskcoloptions=("Calculation" "Explanation" "Algorithm" "Result")
 taskrowoptions=(
-    '\\begin{itemize}\item Topic 1\item Topic 2\\end{itemize}'
-    '\\textbf{Text 1}'
-    '\\textcolor{javapurple}{Text 2}'
+    "\begin{itemize}\item Topic 1\item Topic 2\end{itemize}"
+    "\textbf{Text 1}"
+    "\textcolor{javapurple}{Text 2}"
     "Text [3]"
     "Text 4,5"
-    "Text $\sqrt{6}$"
-    'Explanation 2a\\newline Explanation( 2b'
-    'Explanation $[3 + 3]$\\newline $\Rightarrow$ Explanation) 3'
+    'Text $\sqrt{6}$'
+    "Explanation 2a\newline Explanation( 2b"
+    'Explanation $[3 + 3]$\newline $\Rightarrow$ Explanation) 3'
 )
 
 # Generate as many sheets as defined
-for (( s=1; s<=$sheets; s++ ))
+for (( s=1; s<=sheets; s++ ))
 do
     # Create name and push header to the file
     FileName="./$TgtFolder/sheet_0$s.csv"
@@ -230,9 +237,9 @@ do
     # List of integers specifying the number of subtasks for each task
     taskList=()
     # Fill the tasklist with pseudo random values
-    for (( i=0; i<$TotalTasks; i+=subtasks ))
+    for (( i=0; i<TotalTasks; i+=subtasks ))
     do
-        rand=$(( $RANDOM % 100 ))
+        rand=$(( RANDOM % 100 ))
         if [[ $rand -lt 30 ]]; then
             subtasks=4
         elif [[ $rand -lt 70 ]]; then
@@ -242,22 +249,24 @@ do
         else
             subtasks=1
         fi
-        taskList+=($subtasks)
+        taskList+=("$subtasks")
     done
 
     # Generate each task with the definied number of subtasks
     for (( i=0; i<${#taskList[@]}; i++ ))
     do
         # List of integers specifying the points for each subtasks
-        subpoints=($(shuf -i 1-4 -n ${taskList[i]} -r))
+        subpoints=()
+        while IFS='' read -r line; do subpoints+=("$line"); done < <(shuf -i 1-4 -n "${taskList[i]}" -r)
+
         # Sum the subtaskpoints
         sumpoints=0
-        for val in ${subpoints[@]}; do
-            ((sumpoints+=$val))
+        for val in "${subpoints[@]}"; do
+            ((sumpoints+=val))
         done
 
         # Add columns for taskid, title and points
-        ipo=$(($i+1))
+        ipo=$((i+1))
         Add-Column "$ipo"
         Add-Column "Assignment $ipo"
         Add-Column "$sumpoints"
@@ -274,7 +283,7 @@ do
                 Add-Column ""
             else
                 # Select a random predefined description
-                index=$(( $RANDOM % ${#taskrowoptions[@]} ))
+                index=$(( RANDOM % ${#taskrowoptions[@]} ))
                 Add-Column "Description ${taskrowoptions[$index]}"
             fi
         fi
@@ -287,7 +296,7 @@ do
             do
                 # If taskcolumns are enabled randomly use the -1, ... subfix
                 if [[ $taskcols -eq 1 ]]; then
-                    rand=$(( $RANDOM % 100 ))
+                    rand=$(( RANDOM % 100 ))
                     if [[ $rand -lt 15 ]]; then
                         Add-Subtaskrow "-1"
                         Add-Subtaskrow "-2"
@@ -314,5 +323,6 @@ done
 ###################################################################################################
 # TODO
 # Generate random points file
+# Add linter for bash and powershell
 
 # $SHELL

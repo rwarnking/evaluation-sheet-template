@@ -36,7 +36,7 @@ do
         -c|--cols) FileName="evaluation-sheet-taskcol";;
     esac
     if [[ "$var" =~ ^[0-9]+$ ]] ; then
-        TutorList+=(${var})
+        TutorList+=("${var}")
     fi
 done
 
@@ -60,22 +60,22 @@ PdfName="${FileName}.pdf"
 #   Returns a value of how many errors were encountered and a value for the number of
 #   processed filed
 #######################################
-function New-Sheets {
+function New-Sheet {
     echo "Start compiling!"
 
     # Replace tutor id if present
     if [[ -n ${1} ]]; then
         SheetName="tutor_${1}_sheet_"
         CurTutor="^\\def\\tutornumber{[[:digit:]]*}$"
-        ReplTutor="\\\def\\\tutornumber{${TutorID}}"
-        Edit-LastOccur $CurTutor $ReplTutor
+        ReplTutor="\\\def\\\tutornumber{${1}}"
+        Edit-LastOccur "$CurTutor" "$ReplTutor"
     fi
 
 #     ###########################################
 #     # Loop all sheets in the source directory #
 #     ###########################################
     # http://www.gnu.org/software/bash/manual/html_node/Pattern-Matching.html
-    for fname in ./$SrcFolder/sheet_*[0-9].csv; do
+    for fname in ./"$SrcFolder"/sheet_*[0-9].csv; do
         ((SheetCounter+=1))
         # Get sheetnumber
         [[ "$fname" =~ _([0-9]+).csv ]] && SheetNumber=${BASH_REMATCH[1]}
@@ -83,25 +83,24 @@ function New-Sheets {
         # Replace sheet line in tex file
         CurSheet='^\\def\\sheetnumber{[[:digit:]]*}$'
         ReplSheet="\\\def\\\sheetnumber{${SheetNumber}}"
-        Edit-LastOccur $CurSheet "$ReplSheet"
+        Edit-LastOccur "$CurSheet" "$ReplSheet"
 
         NewPdfName="${SheetName}${SheetNumber}.pdf"
         TgtPath="./${TgtFolder}/${NewPdfName}"
-        TmpPath="./${NewPdfName}"
         PointsPath="./${SrcFolder}/sheet_${SheetNumber}_points.csv"
 
         # Check if the file already exists and is not allowed to be overriden
         if [[ -e $TgtPath ]] && [[ $override -eq 0 ]]; then
-            printf "${RED}ERROR: Did not compile sheet ${SheetNumber}, because:\n"
-            printf "${RED}Can not move file ${TgtPath}! An old version is already present!${NC}\n"
+            printf "%bERROR: Did not compile sheet %d, because:\n" "${RED}" "${SheetNumber}"
+            printf "Can not move file %s! An old version is already present!%b\n" "${TgtPath}" "${NC}"
             ((ErrorCounter++))
         # Check if point data is missing but should be used
-        elif [[ !(-e $PointsPath) ]] && [[ $points -eq 1 ]]; then
-            printf "${RED}ERROR: Did not compile sheet ${SheetNumber}, because:\n"
-            printf "${RED}Can not find file ${PointsPath} (for the points data)!${NC}\n"
+        elif [[ ! (-e $PointsPath) ]] && [[ $points -eq 1 ]]; then
+            printf "%bERROR: Did not compile sheet %d, because:\n" "${RED}" "${SheetNumber}"
+            printf "Can not find file %s (for the points data)!%b\n" "${PointsPath}" "${NC}"
             ((ErrorCounter++))
         else
-            printf "${GREEN}Compile sheet ${SheetNumber}${NC}\n"
+            printf "%bCompile sheet %d%b\n" "${GREEN}" "${SheetNumber}" "${NC}"
 
             # Compile tex file
             latexmk -pdf $TexName
@@ -109,12 +108,12 @@ function New-Sheets {
             # If override is active remove file in sheets before moving
             if [[ -e $TgtPath ]] && [[ $override -eq 1 ]]; then
                 # Remove item
-                rm $TgtPath
-                printf "${YELLOW}Overriding file ${TgtPath}!${NC}\n"
+                rm "$TgtPath"
+                printf "%bOverriding file %s!%b\n" "${YELLOW}" "${TgtPath}" "${NC}"
             fi
 
             # Move and rename item
-            mv $PdfName $TgtPath
+            mv $PdfName "$TgtPath"
         fi
     done
 }
@@ -128,7 +127,7 @@ function New-Sheets {
 #     If a change is not present inside the $script:changes array the change is saved, so
 #     the change can be revoked later
 # ARGUMENTS:
-#   Pattern A powershell regular expression string that shall be matched inside the $TexName file.
+#   Pattern A regular expression string that shall be matched inside the $TexName file.
 #   Replacement A replacement string that shall replace the last found $Pattern.
 # OUTPUTS:
 #   Does nothing if no matches were found.
@@ -136,7 +135,7 @@ function New-Sheets {
 Edit-LastOccur () {
     # Get file content and store it into $content variable
     # https://stackoverflow.com/questions/19771965/split-bash-string-by-newline-characters
-    content=$(grep -n ${1} ./${TexName})
+    content=$(grep -n "${1}" ./${TexName})
     # Get line numbers
     IFS=$'\n' read -rd '' -a lines <<< "$content"
 
@@ -145,8 +144,8 @@ Edit-LastOccur () {
         IFS=':' read -r -a lastline <<< "${lines[-1]}"
 
         # Save a line only once
-        if [[ ! " ${changes[*]} " =~ " ${lastline[0]} " ]]; then
-            changes+=(${lastline[0]})
+        if [[ ! "${changes[*]}" =~ ${lastline[0]} ]]; then
+            changes+=("${lastline[0]}")
             changes+=("${lastline[1]}")
         fi
 
@@ -175,31 +174,31 @@ if [[ "$help" -eq 1 ]]; then
         --help, -h Shows how to use this script
 
     Examples for invoking compilation:
-        .\compile_all.ps1 2018-19_example-coursename-1
-        .\compile_all.ps1 2018-19_example-coursename-1 -o
-        .\compile_all.ps1 2018-19_example-coursename-1 --cols -o
-        .\compile_all.ps1 2018-19_example-coursename-1 21 1 2 3
+        .\compile_all.sh 2018-19_example-coursename-1
+        .\compile_all.sh 2018-19_example-coursename-1 -o
+        .\compile_all.sh 2018-19_example-coursename-1 --cols -o
+        .\compile_all.sh 2018-19_example-coursename-1 21 1 2 3
     "
 elif [[ "$SrcFolder" ]]; then
     TgtFolder="sheets"
 
     # Check if input folder exists
-    if [[ !(-d ./$SrcFolder) ]]; then
-        printf "${RED}ERROR: source folder does not exist!"
+    if [[ ! (-d ./$SrcFolder) ]]; then
+        printf "%bERROR: source folder does not exist!" "${RED}"
         exit
     fi
     # Check if groups exist
-    if [[ !(-e ./$SrcFolder/groups.csv) ]]; then
-        printf "${RED}ERROR: source folder does not contain groups.csv!"
+    if [[ ! (-e ./$SrcFolder/groups.csv) ]]; then
+        printf "%bERROR: source folder does not contain groups.csv!" "${RED}"
         exit
     fi
     # Check if participants exist
-    if [[ !(-e ./$SrcFolder/participants.csv) ]]; then
-        printf "${RED}ERROR: source folder does not contain participants.csv!"
+    if [[ ! (-e ./$SrcFolder/participants.csv) ]]; then
+        printf "%bERROR: source folder does not contain participants.csv!" "${RED}"
         exit
     fi
     # Create if not present
-    if [[ !(-d ./$TgtFolder) ]]; then
+    if [[ ! (-d ./$TgtFolder) ]]; then
         # Create sheets folder if not existent and hide console output
         mkdir -p ./$TgtFolder
     fi
@@ -209,12 +208,12 @@ elif [[ "$SrcFolder" ]]; then
     # Set the year in the tex file
     CurYear='^\\def\\semester{\([[:digit:]]\|\-\)*}'
     ReplYear="\\\def\\\semester{${tmp[0]}} % chktex 8"
-    Edit-LastOccur $CurYear "$ReplYear"
+    Edit-LastOccur "$CurYear" "$ReplYear"
 
     # Set the course name in the tex file
     CurDir='^\\def\\coursename{.*}$'
     ReplDir="\\\def\\\coursename{${tmp[1]}}"
-    Edit-LastOccur $CurDir $ReplDir
+    Edit-LastOccur "$CurDir" "$ReplDir"
 
     # Enable points if parameter present
     # Otherwise disable points
@@ -233,10 +232,10 @@ elif [[ "$SrcFolder" ]]; then
     if [[ ${#TutorList[@]} -ne 0 ]]; then
         for ((i=0; i<${#TutorList[@]}; i+=1));
         do
-            New-Sheets "${TutorList[i]}"
+            New-Sheet "${TutorList[i]}"
         done
     else
-        New-Sheets
+        New-Sheet
     fi
 
     # Change the content back to the original
@@ -250,12 +249,12 @@ elif [[ "$SrcFolder" ]]; then
     latexmk -c
 
     if [[ $ErrorCounter -gt 0 ]]; then
-        printf "${RED}Finished compiling. ${ErrorCounter} files had errors! Processed ${SheetCounter} files."
+        printf "%bFinished compiling. %d files had errors! Processed %d files." "${RED}" "${ErrorCounter}" "${SheetCounter}"
     else
-        printf "${GREEN}Finished compiling without errors! Processed ${SheetCounter} files."
+        printf "%bFinished compiling without errors! Processed %d files." "${GREEN}" "${SheetCounter}"
     fi
 else
     echo "This script can automatically compile all sheets of a given folder.
     For more information:
-    .\compile_all.ps1 --help"
+    .\compile_all.sh --help"
 fi

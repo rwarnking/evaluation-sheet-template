@@ -1,35 +1,39 @@
-Write-Host "Installing dependencies (default/required packages)!"
+Write-Output "Installing dependencies (default/required packages)!"
 
 # For calc package
 # For tabularx package
 # For array package
-Invoke-Expression "tlmgr install tools"
+tlmgr install tools
 
-Write-Host ""
-Write-Host "Installing dependencies (mandatory packages)!"
+Write-Output ""
+Write-Output "Installing dependencies (mandatory packages)!"
 
-Invoke-Expression "tlmgr install geometry"
+tlmgr install geometry
 # For loading the .csv files as database
-Invoke-Expression "tlmgr install datatool"
+tlmgr install datatool
 # For \xintFor and similar
 # For \xintifCmp and similar
-Invoke-Expression "tlmgr install xint"
+tlmgr install xint
 # For \forloop
-Invoke-Expression "tlmgr install forloop"
+tlmgr install forloop
 # For \pgfmathresult and tikz
-Invoke-Expression "tlmgr install pgf"
+tlmgr install pgf
 # Clip the informations to fit inside the table cells
-Invoke-Expression "tlmgr install collectbox"
-Invoke-Expression "tlmgr install adjustbox"
+tlmgr install collectbox
+tlmgr install adjustbox
 # For string commands (for example equality tests)
-Invoke-Expression "tlmgr install xstring"
+tlmgr install xstring
 # For dashed line
-Invoke-Expression "tlmgr install arydshln"
+tlmgr install arydshln
 
-Write-Host ""
-Write-Host "Installing dependencies (optional task packages)!"
+Write-Output ""
+Write-Output "Installing dependencies (optional task packages)!"
 
 # Used to reduce distance between items in itemize (\setlist)
-Invoke-Expression "tlmgr install listings"
+tlmgr install listings
 # Used for displaying code inside the assignments (used for \lstset)
-Invoke-Expression "tlmgr install enumitem"
+tlmgr install enumitem
+
+$host.UI.RawUI.ForegroundColor = "DarkGreen"
+Write-Output "Installation finished!"
+$host.UI.RawUI.ForegroundColor = "Gray"

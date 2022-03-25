@@ -1,3 +1,4 @@
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSReviewUnusedParameter', 'override', Justification = 'False positive')]
 # https://www.techtarget.com/searchwindowsserver/tip/Understanding-the-parameters-of-Windows-PowerShell-functions
 param(
     [Parameter()]
@@ -30,8 +31,39 @@ $TexName = -join($FileName, ".tex")
 $PdfName = -join($FileName, ".pdf")
 $changes = @()
 
-# TODOs
-# documentation in .tex and here
+<#
+.DESCRIPTION
+Prints the given text in red to the console using Write-Warning.
+
+.PARAMETER Text
+The text to print to the console.
+#>
+function Write-Problem {
+    param(
+        [Parameter()]
+        [String]$text
+    )
+    $host.UI.RawUI.ForegroundColor = "DarkRed"
+    Write-Output "$text" | out-host
+    $host.UI.RawUI.ForegroundColor = "Gray"
+}
+
+<#
+.DESCRIPTION
+Prints the given text in green to the console using Write-Warning.
+
+.PARAMETER Text
+The text to print to the console.
+#>
+function Write-Success {
+    param(
+        [Parameter()]
+        [String]$Text
+    )
+    $host.UI.RawUI.ForegroundColor = "DarkGreen"
+    Write-Output "$Text" | out-host
+    $host.UI.RawUI.ForegroundColor = "Gray"
+}
 
 ###################################################################################################
 # Functions
@@ -49,20 +81,21 @@ Each sheet is renamed according to the tutor settings and moved inside a $TgtFol
 The tutor id that should is used to select the corresponding groups and there points if needed.
 
 .EXAMPLE
-$result = (New-Sheets $_ | Select-Object -last 2)
+$result = (New-Sheet $_ | Select-Object -last 2)
 
 .NOTES
 Overrides files according to $override.IsPresent variable.
 Returns a value of how many errors were encountered and a value for the number of
 processed filed
 #>
-function New-Sheets {
+function New-Sheet {
+    [CmdletBinding(SupportsShouldProcess, ConfirmImpact='None')]
     param(
         [Parameter()]
         [int]$TutorID
     )
 
-    Write-Host "Start compiling!"
+    Write-Success "Start compiling!"
     $ErrCounter = 0
 
     # Replace tutor id if present
@@ -92,32 +125,32 @@ function New-Sheets {
         $PointsPath = -join(".\", $SrcFolder, "\sheet_", $SheetNumber, "_points", ".csv")
 
         # Check if the file already exists and is not allowed to be overriden
-        if ((Test-Path $TgtPath) -and !($override.IsPresent))
+        if ((Test-Path $TgtPath) -and -not $override.IsPresent)
         {
-            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
-            Write-Host "Can not move file"$TgtPath"! An old version is already present!" -ForegroundColor DarkRed
+            Write-Warning "Did not compile sheet $SheetNumber, because:"
+            Write-Problem "Can not move file $TgtPath! An old version is already present!"
             $ErrCounter++
         }
         # Check if the file already exists and is not allowed to be overriden
-        elseif ((Test-Path $TmpPath) -and !($override.IsPresent))
+        elseif ((Test-Path $TmpPath) -and -not $override.IsPresent)
         {
-            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
-            Write-Host "Can not create file"$TmpPath"! An old version is already present!" -ForegroundColor DarkRed
+            Write-Warning "Did not compile sheet $SheetNumber, because:"
+            Write-Problem "Can not create file $TmpPath! An old version is already present!"
             $ErrCounter++
         }
         # Check if point data is missing but should be used
         elseif (!(Test-Path $PointsPath) -and $points.IsPresent)
         {
-            Write-Host "Did not compile sheet"$SheetNumber", because:" -ForegroundColor DarkRed
-            Write-Host "Can not find file"$PointsPath" (for the points data)!" -ForegroundColor DarkRed
+            Write-Warning "Did not compile sheet $SheetNumber, because:"
+            Write-Problem "Can not find file $PointsPath (for the points data)!"
             $ErrCounter++
         }
         else
         {
-            Write-Host "Compile sheet"$SheetNumber"!" -ForegroundColor DarkGreen
+            Write-Success "Compile sheet $SheetNumber!"
 
             # Compile tex file
-            Invoke-Expression "latexmk -pdf $TexName"
+            latexmk -pdf $TexName
 
             # If override is active remove file
             if ((Test-Path $TmpPath) -and $override.IsPresent)
@@ -131,7 +164,7 @@ function New-Sheets {
             if ((Test-Path $TgtPath) -and $override.IsPresent)
             {
                 Remove-Item $TgtPath
-                Write-Host "Overriding file"$TgtPath"!" -ForegroundColor DarkYellow
+                Write-Warning "Overriding file $TgtPath!"
             }
             Move-Item -Path $TmpPath -Destination $TgtPath
         }
@@ -199,7 +232,7 @@ function Edit-LastOccur {
 # Main
 ###################################################################################################
 if ($help.IsPresent) {
-    Write-Host "
+    Write-Success "
     This script can automatically compile all sheets of a given folder.
     For this a source directory is needed. For each sheet_XX.csv inside the given folder
     a PDF is created using the evaluation-sheet.tex.
@@ -225,19 +258,19 @@ if ($help.IsPresent) {
     # Check if input folder exists
     if (!(Test-Path .\$SrcFolder))
     {
-        Write-Host "ERROR: source folder does not exist!" -ForegroundColor DarkRed
+        Write-Problem "Source folder does not exist!"
         return
     }
     # Check if groups exist
     if (!(Test-Path .\$SrcFolder\groups.csv))
     {
-        Write-Host "ERROR: source folder does not contain groups.csv!" -ForegroundColor DarkRed
+        Write-Problem "Source folder does not contain groups.csv!"
         return
     }
     # Check if participants exist
     if (!(Test-Path .\$SrcFolder\participants.csv))
     {
-        Write-Host "ERROR: source folder does not contain participants.csv!" -ForegroundColor DarkRed
+        Write-Problem "Source folder does not contain participants.csv!"
         return
     }
     # Create if not present
@@ -278,14 +311,14 @@ if ($help.IsPresent) {
     if ($TutorList) {
         $TutorList | ForEach-Object {
             # https://stackoverflow.com/questions/22663848/
-            $result = (New-Sheets $_ | Select-Object -last 2)
+            $result = (New-Sheet $_ | Select-Object -last 2)
             $ErrorCounter += $result[0]
             $SheetCounter += $result[1]
         }
     }
     else
     {
-        $result = (New-Sheets | Select-Object -last 2)
+        $result = (New-Sheet | Select-Object -last 2)
         $ErrorCounter = $result[0]
         $SheetCounter = $result[1]
     }
@@ -300,15 +333,15 @@ if ($help.IsPresent) {
     }
 
     # Cleanup
-    Invoke-Expression "latexmk -c"
+    latexmk -c
 
     if ($ErrorCounter -gt 0) {
-        Write-Host "Finished compiling."$ErrorCounter" files had errors! Processed" $SheetCounter" files." -ForegroundColor DarkRed
+        Write-Warning "Finished compiling. $ErrorCounter files had errors! Processed $SheetCounter files."
     } else {
-        Write-Host "Finished compiling without errors! Processed"$SheetCounter" files." -ForegroundColor DarkGreen
+        Write-Success "Finished compiling without errors! Processed $SheetCounter files."
     }
 } else {
-    Write-Host "This script can automatically compile all sheets of a given folder.
+    Write-Success "This script can automatically compile all sheets of a given folder.
     For more information:
     .\compile_all.ps1 -help"
 }

@@ -56,6 +56,7 @@ jobs:
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_LATEX : true
           VALIDATE_POWERSHELL : true
-          VALIDATE_SHELL_SHFMT : true
+          VALIDATE_BASH : true
+          VALIDATE_GITHUB_ACTIONS : true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
