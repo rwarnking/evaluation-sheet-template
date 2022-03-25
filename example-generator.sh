@@ -3,6 +3,8 @@ TgtFoler="2018_example-coursename-3"
 TotalParticipants=30
 sheets=4
 tutorcount=2
+# Set this to 1 to get taskcols assignments
+taskcols=0
 # The seperator
 sep=";";
 
@@ -162,16 +164,149 @@ do
 done
 
 ###################################################################################################
-# sheet_01.csv
+# sheet_XX.csv
 ###################################################################################################
-# TODO
-# Generate random sheet file
+#######################################
+# Helper function to print one row of a subtask
+# DESCRIPTION
+#     Print the fields taskid, title, points and description into one row of the specified csv.
+#     Uses taskcoloptions/taskrowoptions for the description value.
+# ARGUMENTS:
+#     An additional subtask parameter (-1, -2, -3, ...) which is only used in taskcol mode.
+#     It allows for multiline subtasks.
+#######################################
+function Add-Subtaskrow {
+    Add-Column "$ipo${letters[$idx]}$1"
+    # Title column is empty for all subtasks
+    if [[ $taskcols -eq 1 ]]; then
+        Add-Column ""
+    else
+        Add-Column ""
+    fi
+    # Points column
+    Add-Column "${subpoints[$j]}"
+    # Randomized description column
+    if [[ $taskcols -eq 1 ]]; then
+        index=$(( $RANDOM % ${#taskcoloptions[@]} ))
+        Add-Column "${taskcoloptions[$index]}"
+    else
+        index=$(( $RANDOM % ${#taskrowoptions[@]} ))
+        Add-Column "${taskrowoptions[$index]}"
+    fi
+    printf "\n" >> $FileName
+}
+
+# Specifies target number of tasks
+TotalTasks=12
+# To label the subtasks
+letters=({a..z})
+# Text options for the task descriptions
+taskcoloptions=("Calculation" "Explanation" "Algorithm" "Result")
+taskrowoptions=(
+    '\\begin{itemize}\item Topic 1\item Topic 2\\end{itemize}'
+    '\\textbf{Text 1}'
+    '\\textcolor{javapurple}{Text 2}'
+    "Text [3]"
+    "Text 4,5"
+    "Text $\sqrt{6}$"
+    'Explanation 2a\\newline Explanation( 2b'
+    'Explanation $[3 + 3]$\\newline $\Rightarrow$ Explanation) 3'
+)
+
+# Generate as many sheets as defined
+for (( s=1; s<=$sheets; s++ ))
+do
+    # Create name and push header to the file
+    FileName="sheet_0$s.csv"
+    printf "taskid; title; points; description;\n" >> $FileName
+
+    subtasks=0
+    # List of integers specifying the number of subtasks for each task
+    taskList=()
+    # Fill the tasklist with pseudo random values
+    for (( i=0; i<$TotalTasks; i+=subtasks ))
+    do
+        rand=$(( $RANDOM % 100 ))
+        if [[ $rand -lt 30 ]]; then
+            subtasks=4
+        elif [[ $rand -lt 70 ]]; then
+            subtasks=3
+        elif [[ $rand -lt 80 ]]; then
+            subtasks=2
+        else
+            subtasks=1
+        fi
+        taskList+=($subtasks)
+    done
+
+    # Generate each task with the definied number of subtasks
+    for (( i=0; i<${#taskList[@]}; i++ ))
+    do
+        # List of integers specifying the points for each subtasks
+        subpoints=($(shuf -i 1-4 -n ${taskList[i]} -r))
+        # Sum the subtaskpoints
+        sumpoints=0
+        for val in ${subpoints[@]}; do
+            ((sumpoints+=$val))
+        done
+
+        # Add columns for taskid, title and points
+        ipo=$(($i+1))
+        Add-Column "$ipo"
+        Add-Column "Assignment $ipo"
+        Add-Column "$sumpoints"
+        # Add the description column with value dependent on the column type
+        # and the number of subtasks.
+        if [[ $taskcols -eq 1 ]]; then
+            if [[ ${taskList[i]} -gt 1 ]]; then
+                Add-Column "Sum"
+            else
+                Add-Column "Result"
+            fi
+        else
+            if [[ ${taskList[i]} -gt 1 ]]; then
+                Add-Column ""
+            else
+                # Select a random predefined description
+                index=$(( $RANDOM % ${#taskrowoptions[@]} ))
+                Add-Column "Description ${taskrowoptions[$index]}"
+            fi
+        fi
+        printf "\n" >> $FileName
+
+        # Add subtasks if there are any
+        if [[ ${taskList[i]} -gt 1 ]]; then
+            idx=0
+            for (( j=0; j<${taskList[$i]}; j++ ))
+            do
+                # If taskcolumns are enabled randomly use the -1, ... subfix
+                if [[ $taskcols -eq 1 ]]; then
+                    rand=$(( $RANDOM % 100 ))
+                    if [[ $rand -lt 15 ]]; then
+                        Add-Subtaskrow "-1"
+                        Add-Subtaskrow "-2"
+                        Add-Subtaskrow "-3"
+                        ((j+=2))
+                    elif [[ $rand -lt 30 ]]; then
+                        Add-Subtaskrow "-1"
+                        Add-Subtaskrow "-2"
+                        ((j++))
+                    else
+                        Add-Subtaskrow
+                    fi
+                else
+                    Add-Subtaskrow
+                fi
+                ((idx++))
+            done
+        fi
+    done
+done
 
 ###################################################################################################
 # sheet_01_points.csv
 ###################################################################################################
 # TODO
-# Generate random Group file
 # Generate random points file
 
 # $SHELL
