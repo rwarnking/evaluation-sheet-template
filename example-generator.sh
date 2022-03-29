@@ -277,9 +277,9 @@ do
             ((sumpoints+=val))
         done
         # Add all point values to one list
-        pointsList+=($sumpoints)
-        subpointsList+=(${subpoints[@]})
-        (( sheetPoints+=$sumpoints ))
+        pointsList+=("$sumpoints")
+        subpointsList+=("${subpoints[@]}")
+        (( sheetPoints+=sumpoints ))
 
         # Add columns for taskid, title and points
         ipo=$((t+1))
@@ -315,13 +315,13 @@ do
                 # But check for max amount of subtasks
                 if [[ $taskcols -eq 1 ]]; then
                     rand=$(( RANDOM % 100 ))
-                    if [[ $rand -lt 30 && $((j+2))<${taskList[$t]} ]]; then
+                    if [[ $rand -lt 30 && $((j+2)) < ${taskList[$t]} ]]; then
                         Add-Subtaskrow "-1"
                         ((j++))
                         Add-Subtaskrow "-2"
                         ((j++))
                         Add-Subtaskrow "-3"
-                    elif [[ $rand -lt 50 && $((j+1))<${taskList[$t]} ]]; then
+                    elif [[ $rand -lt 50 && $((j+1)) < ${taskList[$t]} ]]; then
                         Add-Subtaskrow "-1"
                         ((j++))
                         Add-Subtaskrow "-2"
@@ -355,7 +355,7 @@ do
         # Add group id
         Add-Column "$g"
         # Add random points for the complete sheet
-        totalpoints=$(( RANDOM % $sheetPoints ))
+        totalpoints=$(( RANDOM % sheetPoints ))
         taskpoints=()
         notfull=()
 
@@ -363,18 +363,18 @@ do
         for (( t=0; t<${#taskList[@]}; t++ ))
         do
             taskpoints+=(0)
-            notfull+=($t)
+            notfull+=("$t")
         done
 
         # Distribute all points in increments of one to the different tasks
         # If a task is full remove it from the list such that it can not get any more points
-        for (( p=0; p<$totalpoints; p++ ))
+        for (( p=0; p<totalpoints; p++ ))
         do
             # Get random task idx which is not yet full
             idx=$(( RANDOM % ${#notfull[@]} ))
             # Get element at idx and increment
             tidx=${notfull[$idx]}
-            (( taskpoints[$tidx]++ ))
+            (( taskpoints[tidx]++ ))
             # Remove from list
             if [[ ${taskpoints[$tidx]} -eq ${pointsList[$tidx]} ]]; then
                 unset "notfull[$idx]"
@@ -394,19 +394,19 @@ do
                 subtaskpoints=()
                 notfull=()
                 # Initialize the subtaskpoints with zero
-                for (( st=0; st<${taskList[t]}; st++ ))
+                for (( st=0; st<taskList[t]; st++ ))
                 do
                     subtaskpoints+=(0)
-                    notfull+=($st)
+                    notfull+=("$st")
                 done
                 # Distribute the points for this task across all subtasks
-                for (( p=0; p<${taskpoints[t]}; p++ ))
+                for (( p=0; p<taskpoints[t]; p++ ))
                 do
                     # Get random task idx which is not yet full
                     idx=$(( RANDOM % ${#notfull[@]} ))
                     # Get element at idx and increment
                     stidx=${notfull[$idx]}
-                    (( subtaskpoints[$stidx]++ ))
+                    (( subtaskpoints[stidx]++ ))
                     # Remove from list (beware the offset)
                     if [[ ${subtaskpoints[$stidx]} -eq ${subpointsList[$((stidx+offset))]} ]]; then
                         unset "notfull[$idx]"
@@ -414,12 +414,12 @@ do
                     fi
                 done
                 # Add the point value to the column
-                for (( st=0; st<${taskList[t]}; st++ ))
+                for (( st=0; st<taskList[t]; st++ ))
                 do
                     Add-Column "${subtaskpoints[st]}"
                 done
             fi
-            ((offset+=${taskList[t]}))
+            ((offset+=taskList[t]))
         done
         printf "\n" >> $FileName
     done
