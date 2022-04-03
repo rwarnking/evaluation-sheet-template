@@ -145,8 +145,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ needs.create_release.outputs.upload_url }}
-          asset_path: ./evaluation-sheet.tex
-          asset_name: evaluation-sheet.tex
+          asset_path: ./evaluation-sheet-taskrow.tex
+          asset_name: evaluation-sheet-taskrow.tex
           asset_content_type: text/plain
       # Upload layout: task cols
       - name: Upload

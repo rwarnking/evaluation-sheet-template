@@ -50,7 +50,7 @@ jobs:
       - name: Compile taskrow document
         uses: xu-cheng/latex-action@v2
         with:
-          root_file: "evaluation-sheet.tex"
+          root_file: "evaluation-sheet-taskrow.tex"
           glob_root_file: true
       - name: Compile taskcol document
         uses: xu-cheng/latex-action@v2
