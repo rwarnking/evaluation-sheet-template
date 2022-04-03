@@ -521,7 +521,10 @@
 % Needs to be defined:
 % \curparticipants, \lastsheet
 \newcounter{deadrow}
+\newcounter{firstpointrow}
 \newcommand{\creategroup}{%
+    % Indicate that no points were printed for this group yet
+    \setcounter{firstpointrow}{\enable}%
     \setcounter{personnum}{1}%
     \addtocounter{itergroups}{1}%
     \setcounter{first}{\enable}%
@@ -557,9 +560,9 @@
             {\setcounter{deadrow}{\disable}}%
         }%
         %
-        % Check if dead rows should be visible or removed
         \ifthenelse{\equal{\value{deadrow}}{\enable}}%
         {%
+            % Check if dead rows should be visible or removed
             \ifthenelse{\equal{\showdeadrow}{\enable}}%
             {%
                 \printrow{##1}%
@@ -627,10 +630,24 @@
     \DTLforeach*{assignments_db} % database label
     {\curtask=\taskidKey}%
     {%
-        \printonce{\printpoints{\curtask}}%
+        % If the row is dead then mark it as such, otherwise print the content
+        \xintifEq{\value{deadrow}}{\enable}%
+        {%
+            % Disable the cell
+            \cellcolor{disabled}%
+        }{%
+            \printonce{\printpoints{\curtask}}%
+        }%
         &%
     }%
-    \printonce{\printpointsum}%
+    \xintifEq{\value{deadrow}}{\enable}%
+    {%
+        % Disable the cell
+        \cellcolor{disabled}%
+    }{%
+        \printonce{\printpointsum}%
+        \setcounter{firstpointrow}{\disable}%
+    }%
 }
 
 % This function is used to print only one value per cell
@@ -640,7 +657,7 @@
 \newcommand{\printonce}[1]{%
     \ifthenelse{\equal{\showrowlinesall}{\enable}}%
     {#1}{%
-        \ifthenelse{\equal{\value{personnum}}{2}}%
+        \xintifEq{\value{firstpointrow}}{\enable}%
         {#1}{}%
     }%
 }
@@ -758,27 +775,20 @@
 %
 % @param #1 The index of the processed task.
 \newcommand{\printpoints}[1]{%
-    % If the row is dead then mark it as such, otherwise print the content
-    \xintifEq{\value{deadrow}}{\enable}%
+    % If enabled show points
+    \xintifEq{\showpoints}{\enable}%
     {%
-        % Disable the cell
-        \cellcolor{disabled}%
-    }{%
-        % If enabled show points
-        \xintifEq{\showpoints}{\enable}%
-        {%
-            % Get point value of this group for the given task
-            \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
-            \DTLgetcolumnindex{\assigncolumn}{points_db}{#1}%
-            % Use this instead of DTLgetrowindex to expand the argument
-            \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
-            \DTLgetvalue{\taskpoints}%
-            {points_db}%
-            {\grouprow}%
-            {\assigncolumn}%
-            \clipstring[\linewidth-1pt]{\taskpoints}%
-        }{}%
-    }%
+        % Get point value of this group for the given task
+        \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
+        \DTLgetcolumnindex{\assigncolumn}{points_db}{#1}%
+        % Use this instead of DTLgetrowindex to expand the argument
+        \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
+        \DTLgetvalue{\taskpoints}%
+        {points_db}%
+        {\grouprow}%
+        {\assigncolumn}%
+        \clipstring[\linewidth-1pt]{\taskpoints}%
+    }{}%
 }
 
 % Iterates all assignments and sums the values of major assignments.
@@ -789,47 +799,40 @@
 % Expects \curgroupid to be defined.
 \newcounter{pointsum}
 \newcommand{\printpointsum}{%
-    % If the row is dead then mark it as such, otherwise print the content
-    \xintifEq{\value{deadrow}}{\enable}%
+    % If enabled show points
+    \xintifEq{\showpoints}{\enable}%
     {%
-        % Disable the cell
-        \cellcolor{disabled}%
-    }{%
-        % If enabled show points
-        \xintifEq{\showpoints}{\enable}%
+        % Sum points of group to print them
+        \setcounter{pointsum}{0}%
+        \DTLforeach*{assignments_db} % database label
+        {\curtask=\taskidKey}%
         {%
-            % Sum points of group to print them
-            \setcounter{pointsum}{0}%
-            \DTLforeach*{assignments_db} % database label
-            {\curtask=\taskidKey}%
-            {%
-                % Get the columnindex for this task
-                \DTLgetcolumnindex{\taskcolumn}{points_db}{\curtask}%
-                \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
-                % Use this instead of DTLgetrowindex to expand the argument
-                \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
-                \DTLgetvalue{\taskpoints}%
-                {points_db}%
-                {\grouprow}%
-                {\taskcolumn}%
-                % Do not sum points of subtask, only full assignments
-                \if\IsPositive{\curtask}%
-                    \addtocounter{pointsum}{\taskpoints}%
-                \fi%
-            }%
-            %
-            % Output point sum
-            \clipstring[\linewidth-1pt]{\arabic{pointsum}}%
-            % Color sum column for groups with less then half of max points
-            \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
-            {\cellcolor{underperformed}}%
-            {}%
-            % Color sum column for groups with almost max points
-            \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
-            {\cellcolor{exceptional}}%
-            {}%
-        }{}%
-    }%
+            % Get the columnindex for this task
+            \DTLgetcolumnindex{\taskcolumn}{points_db}{\curtask}%
+            \DTLgetcolumnindex{\groupscolumn}{points_db}{\groupidKey}%
+            % Use this instead of DTLgetrowindex to expand the argument
+            \xdtlgetrowindex{\grouprow}{points_db}{\groupscolumn}{\curgroupid}% groupindex
+            \DTLgetvalue{\taskpoints}%
+            {points_db}%
+            {\grouprow}%
+            {\taskcolumn}%
+            % Do not sum points of subtask, only full assignments
+            \if\IsPositive{\curtask}%
+                \addtocounter{pointsum}{\taskpoints}%
+            \fi%
+        }%
+        %
+        % Output point sum
+        \clipstring[\linewidth-1pt]{\arabic{pointsum}}%
+        % Color sum column for groups with less then half of max points
+        \xintifLt{\value{pointsum}}{\value{complsum}*0.5}%
+        {\cellcolor{underperformed}}%
+        {}%
+        % Color sum column for groups with almost max points
+        \xintifLt{\value{complsum}*0.95}{\value{pointsum}}%
+        {\cellcolor{exceptional}}%
+        {}%
+    }{}%
 }
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
