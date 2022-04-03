@@ -58,5 +58,6 @@ jobs:
           VALIDATE_POWERSHELL : true
           VALIDATE_BASH : true
           VALIDATE_GITHUB_ACTIONS : true
+          VALIDATE_MARKDOWN : true
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
