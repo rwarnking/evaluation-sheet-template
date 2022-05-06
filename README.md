@@ -55,7 +55,7 @@ These packages are needed:
 - [calc](https://www.ctan.org/pkg/calc)
 - [tikz](https://www.ctan.org/pkg/pgf)
 - [adjustbox](https://www.ctan.org/pkg/adjustbox) for `trimclip`
-    - Requires: [collectbox](https://www.ctan.org/pkg/collectbox)
+  - Requires: [collectbox](https://www.ctan.org/pkg/collectbox)
 - [xstring](https://ctan.org/pkg/xstring)
 - [arydshln](https://ctan.org/pkg/arydshln)
 
