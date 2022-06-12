@@ -948,6 +948,29 @@
         \addtocounter{asigncol}{1}
     }
 
+    % If no groups were found print a warning but still show assignments
+    \ifnum\value{numrows}=0
+        \begin{tabularx}{\textwidth}{
+            *{\showname}{l|}
+            *{\showstudy}{l|}
+            *{\showpersonid}{r|}
+            *{\showtutorgroupid}{r|}
+            *{\showgroupid}{r|}
+            *{\showdate}{r|}
+            ;% chktex 26
+            *{\value{asigncol}}{C|}C
+        }%
+            \printheader%
+        \end{tabularx}
+        \textcolor{red}{
+            \hspace*{3.0cm}
+            WARNING\@: No groups found!\newline
+            \hspace*{3.0cm}
+            Please check \semester\_\coursename/groups.csv if it
+            really contains groups for tutor \tutornumber.
+        }
+    \fi
+
     %%%%%%%%%%%%%
     % Main Loop %
     %%%%%%%%%%%%%
@@ -1003,21 +1026,11 @@
                 }{}%
             }%
         \end{tabularx}
-        % If no groups were found print a warning but still show assignments
-        \ifnum\value{numrows}=0
-            \textcolor{red}{
-                \hspace{6.0cm}
-                WARNING\@: No groups found!\newline
-                \hspace*{6.0cm}
-                Please check \semester\_\coursename/groups.csv if it
-                really contains groups for tutor \tutornumber.
-            }
-        \fi
         % Add a clearpage on all pages that are not the last
         \xintifLt{\value{upperbound}}{\value{numrows}}
         {%
             \clearpage
-        }{}%%
+        }{}%
         % Advance loop counter (but reduce by one since the loop intselft adds one)
         \addtocounter{lowerbound}{-1}%
         \addtocounter{lowerbound}{\value{looprows}}%
