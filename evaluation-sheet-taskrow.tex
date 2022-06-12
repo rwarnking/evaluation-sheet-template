@@ -23,6 +23,8 @@
 \usepackage{datatool}
 % Clip the informations to fit inside the table cells
 \usepackage{trimclip}
+% Used for substring and string equality inside the assignment header
+\usepackage{xstring}
 
 % Optional
 % Used to reduce distance between items in itemize (\setlist)
@@ -163,10 +165,41 @@
     \clipbox{0pt 0pt {\dimexpr\width-#1\relax} 0pt}{#2}%
 }
 
+\makeatletter
+% xstring addition that extracts the leading number from a string.
+% Used to get the assignment number from a subtask.
+% https://tex.stackexchange.com/questions/35250/
+% @param #1 The string
+% @returl \Result the macro containing the number
+\newcommand*\ExtractLeadingNumber[1]{%
+    \IfBeginWith{#1}{ }{\StrBehind{#1}{ }[\temp@@]}{\def\temp@@{#1}}%
+    \IfDecimal\temp@@{\def\Result{#1}}{\StrBefore{#1}{\@xs@afterdecimal}[\Result]}%
+}
+\makeatother
+
+%%%%%%%%%%%%%%%%%%%%%%
+% Length definitions %
+%%%%%%%%%%%%%%%%%%%%%%
+% Remove extra margin left
+\setlength{\parindent}{0pt}
+
 \setlength\extrarowheight{2pt}
 \setlist{nosep,after=\vspace*{-\baselineskip}}
 
 \renewcommand{\familydefault}{\sfdefault}
+
+%%%%%%%%%%%%%%%%%%
+% Global Counter %
+%%%%%%%%%%%%%%%%%%
+% Saves the total group number for this tutor
+\newcounter{itergroups}
+
+% Indicates if this row is the first row
+\newcounter{first}
+% Saves the taskid of the last row
+\newcounter{lasttask}
+\setcounter{lasttask}{0}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Print Header
@@ -243,7 +276,6 @@
     \thickhline%
 }
 
-\newcounter{itergroups}
 % Generic function that prints all values of a row.
 % For this all groups are iterated. Furthermore a lower and upper bound
 % are defined to print only the groups of the current page.
@@ -372,9 +404,7 @@
 % @param the max group index
 \newcommand{\createsubtask}[4]{%
     \ifthenelse{\equal{\showsubtaskid}{\enable}}%
-    {
-        #3
-    }{}%
+    {#3}{}
     \small #1 & #2%
     \printtablerow{#4}{\printpoints{#3}}%
 }
@@ -572,6 +602,7 @@
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
+        \setcounter{first}{\enable}%
 
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
         \begin{tabularx}{\textwidth}{ L;r;L*{\columnsMO}{|L} }
@@ -581,12 +612,16 @@
             {\curtask=\taskidKey, \curtitle=\titleKey,
                 \curpoints=\pointsKey, \curdesc=\descriptionKey}
             {%
-                % Create a thickline in front of a full assignment
-                % and a normal line in front of subassignments
                 \if\IsPositive{\curtask}%
-                    \ifnum\curtask>1%
-                        \\ \thickhline%
-                    \fi%
+                    % If first row do not print a hline
+                    % Otherwise check whether the current task is part of a different task
+                    % then the last row. If it is indeed different select a thickline
+                    \xintifEq{\value{first}}{\enable}%
+                    {\setcounter{first}{\disable}}{%
+                        \IfStrEq{\curtask}{\arabic{lasttask}}%
+                        {\\ \hline}{\\ \thickhline}%
+                    }%
+                    \setcounter{lasttask}{\curtask}%
                     \createtask
                         {\curtitle}
                         {\curdesc}
@@ -594,7 +629,18 @@
                         {\curtask}
                         {\arabic{upperbound}}
                 \else
-                    \\ \hline%
+                    % If first row do not print a hline
+                    % Otherwise check whether the current task is part of a different task
+                    % then the last row. If it is indeed different select a thickline
+                    \xintifEq{\value{first}}{\enable}%
+                    {\setcounter{first}{\disable}}{%
+                        \IfBeginWith{\curtask}{\arabic{lasttask}}%
+                        {\\ \hline}{\\ \thickhline}%
+                    }%
+                    % Get the leading number
+                    \ExtractLeadingNumber{\curtask}%
+                    \setcounter{lasttask}{\Result}%
+                    %
                     \createsubtask
                         {\curdesc}
                         {\curpoints}
