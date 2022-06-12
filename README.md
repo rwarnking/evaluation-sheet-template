@@ -73,7 +73,7 @@ These packages are also needed but should usually be installed by default:
 
 Decide which layout you want to use (tasks as columns or as rows) and
 compile the corresponding `.tex` file
-(`evaluation-sheet.tex` | `evaluation-sheet-taskcol.tex`) to a PDF.
+(`evaluation-sheet-taskrow.tex` | `evaluation-sheet-taskcol.tex`) to a PDF.
 
 If you want to compile multiple sheets at once you can use the compile script:
 [bash](https://github.com/rwarnking/evaluation-sheet-template/blob/main/compile_all.sh) |
