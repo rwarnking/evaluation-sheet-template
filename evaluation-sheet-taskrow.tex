@@ -229,8 +229,10 @@
 % Each row can be disabled.
 % @param #1 upperbound The max column number of the current page
 \newcommand{\printheader}[1]{%
+    \setcounter{first}{\enable}%
     \ifthenelse{\equal{\showname}{\enable}}%
     {%
+        \setcounter{first}{\disable}%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Assignment} & \textbf{Pts}%
@@ -242,6 +244,7 @@
     %
     \ifthenelse{\equal{\showstudy}{\enable}}%
     {%
+        \setcounter{first}{\disable}%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Field of study} &%
@@ -253,6 +256,7 @@
     %
     \ifthenelse{\equal{\showpersonid}{\enable}}%
     {%
+        \setcounter{first}{\disable}%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Person ID} &%
@@ -264,6 +268,7 @@
     %
     \ifthenelse{\equal{\showtutorgroupid}{\enable}}%
     {%
+        \setcounter{first}{\disable}%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Tutorgroup ID} &%
@@ -275,6 +280,7 @@
     %
     \ifthenelse{\equal{\showgroupid}{\enable}}%
     {%
+        \setcounter{first}{\disable}%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Group ID} &%
@@ -286,6 +292,7 @@
     %
     \ifthenelse{\equal{\showdate}{\enable}}%
     {%
+        \setcounter{first}{\disable}%
         \xintifEq{\pdflanguage}{\english}%
         {%
             \textbf{Day \& Time} &%
@@ -294,7 +301,8 @@
         }%
         \printtablerow{#1}{\printdate}\\ \hline%
     }{}%
-    \thickhline%
+    \xintifEq{\value{first}}{\enable}%
+    {}{\thickhline}%
 }
 
 % Generic function that prints all values of a row.
@@ -681,11 +689,11 @@
     \forloop{tablenumber}{0}{\value{tablenumber} < \value{max}}{
         \pgfmathparse{int ((\value{tablenumber}+1)*\columns)}
         \setcounter{upperbound}{\pgfmathresult}
-        \setcounter{first}{\enable}%
 
         % Create new left-aligned table (; creates the thickline see \newcolumntype)
         \begin{tabularx}{\textwidth}{ L;r;L*{\columnsMO}{|L} }
             \printheader{\arabic{upperbound}}
+            \setcounter{first}{\enable}%
             %
             \DTLforeach*{assignments_db} % database label
             {\curtask=\taskidKey, \curtitle=\titleKey,
