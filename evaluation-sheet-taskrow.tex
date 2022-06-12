@@ -77,10 +77,20 @@
 \newcommand{\showtutorgroupid}{\disable}
 \newcommand{\showgroupid}{\disable}
 \newcommand{\showdate}{\enable}
-% Enable or disable showing points
-\newcommand{\showpoints}{\enable}
+% Enable or disable task information (title, description, points reachable)
+\newcommand{\showtitle}{\enable}
 % Enable or disable showing id of subtask (e.g. 4a, 4b, 4c)
 \newcommand{\showsubtaskid}{\enable}
+\newcommand{\showdesc}{\enable}
+\newcommand{\showmaxpoints}{\enable}
+% Enable or disable showing points
+\newcommand{\showpoints}{\enable}
+\newcommand{\showdeadinfo}{\disable}
+% Replaces name with initials if enabled
+\newcommand{\shortenfirstname}{\disable}
+\newcommand{\shortenlastname}{\disable}
+% Replace field of study with its initials
+\newcommand{\shortenfieldofstudy}{\disable}
 
 % TODO automate
 \newcommand{\columns}{4}
@@ -217,7 +227,7 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Determine which information rows should be used for the header.
 % Each row can be disabled.
-% @param upperbound The max column number of the current page
+% @param #1 upperbound The max column number of the current page
 \newcommand{\printheader}[1]{%
     \ifthenelse{\equal{\showname}{\enable}}%
     {%
@@ -290,8 +300,8 @@
 % Generic function that prints all values of a row.
 % For this all groups are iterated. Furthermore a lower and upper bound
 % are defined to print only the groups of the current page.
-% @param upperbound The max column number of the current page
-% @param content The content of the currently processed row/cell (can be a function)
+% @param #1 upperbound The max column number of the current page
+% @param #2 content The content of the currently processed row/cell (can be a function)
 \newcommand{\printtablerow}[2]{%
     \setcounter{itergroups}{0}
     % Add values by iterating all groups and use the participant-id to
@@ -324,7 +334,7 @@
 
 % Check if a participant is active by comparing its entry sheet to the current sheetnumber
 % Needs \y to be defined as the entry sheet
-% @param content The value that should be printed if the participant is active
+% @param #1 content The value that should be printed if the participant is active
 \newcommand{\isactive}[1]{%
     % If the person is not yet in the group
     \xintifLt{\sheetnumber}{\y}%
@@ -333,7 +343,11 @@
         \xintifLt{\y}{0}%
         {%
             \xintifGt{\sheetnumber*-1}{\y}%
-            {#1}{}%
+            {#1}{%
+                % Allow to hide or show information of dead row
+                \ifthenelse{\equal{\showdeadinfo}{\enable}}%
+                {#1}{}%
+            }%
         }{#1}%
     }%
 }
@@ -346,8 +360,33 @@
     \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
         \isactive{%
             \clipstring[\linewidth]{%
-                \DTLfetch{participants_db}{\personidKey}{\n}{\firstnameKey}
-                \DTLfetch{participants_db}{\personidKey}{\n}{\lastnameKey}%
+                \DTLgetcolumnindex{\partidcolumn}{participants_db}{\personidKey}%
+                % Use this instead of DTLgetrowindex to expand the argument
+                \xdtlgetrowindex{\partrow}{participants_db}{\partidcolumn}{\n}% participant id
+                \ifthenelse{\equal{\shortenfirstname}{\enable}}%
+                {%
+                    % Get column index of firstname
+                    \DTLgetcolumnindex{\namecolumn}{participants_db}{\firstnameKey}%
+                    \DTLgetvalue{\firstname}%
+                    {participants_db}%
+                    {\partrow}%
+                    {\namecolumn}%
+                    \expandafter\DTLinitials\expandafter{\firstname{}} %
+                }{%
+                    \DTLfetch{participants_db}{\personidKey}{\n}{\firstnameKey} %
+                }%
+                \ifthenelse{\equal{\shortenlastname}{\enable}}%
+                {%
+                    % Get column index of lastname
+                    \DTLgetcolumnindex{\namecolumn}{participants_db}{\lastnameKey}%
+                    \DTLgetvalue{\lastname}%
+                    {participants_db}%
+                    {\partrow}%
+                    {\namecolumn}%
+                    \expandafter\DTLinitials\expandafter{\lastname{}}%
+                }{%
+                    \DTLfetch{participants_db}{\personidKey}{\n}{\lastnameKey}%
+                }%
             }\hfill%
         }%
     }%
@@ -360,7 +399,26 @@
     \foreach \n [count=\c,evaluate=\c as \y using {{\lastsheet}[\c-1]}] in \curparticipants {%
         \isactive{%
             \clipstring[\linewidth]{%
-                \DTLfetch{participants_db}{\personidKey}{\n}{\studyfieldKey}%
+%
+                \ifthenelse{\equal{\shortenfieldofstudy}{\enable}}%
+                {%
+                    \DTLgetcolumnindex{\partidcolumn}{participants_db}{\personidKey}%
+                    % Use this instead of DTLgetrowindex to expand the argument
+                    \xdtlgetrowindex{\partrow}{participants_db}{\partidcolumn}{\n}% groupindex
+                    % Get column index of lastname
+                    \DTLgetcolumnindex{\studycolumn}{participants_db}{\studyfieldKey}%
+                    \DTLgetvalue{\studyfield}%
+                    {participants_db}%
+                    {\partrow}%
+                    {\studycolumn}%
+                    % Remove potential -of- from the study field string
+                    \StrSubstitute{\studyfield{}}{of}{}[\temp]%
+                    \expandafter\DTLinitials\expandafter{\temp}%
+                }{%
+                    \DTLfetch{participants_db}{\personidKey}{\n}{\studyfieldKey}%
+                }%
+%
+                % \DTLfetch{participants_db}{\personidKey}{\n}{\studyfieldKey}%
             }\hfill%
         }%
     }%
@@ -397,26 +455,36 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Prints the task information and the points of the task as two columns.
 % Afterwards adds the point information for the task if enabled
-% @param the tasktitle
-% @param the taskdescription
-% @param the points of the task
-% @param the task index (row)
-% @param the max group index
+% @param #1 the tasktitle
+% @param #2 the taskdescription
+% @param #3 the points of the task
+% @param #4 the task index (row)
+% @param #5 the max group index
 \newcommand{\createtask}[5]{%
-    \textbf{#1} #2 & \textbf{#3}%
+    \ifthenelse{\equal{\showtitle}{\enable}}%
+    {\textbf{#1} }{}%
+    \ifthenelse{\equal{\showdesc}{\enable}}%
+    {#2}{}%
+    &
+    \ifthenelse{\equal{\showmaxpoints}{\enable}}%
+    {\textbf{#3}}{}%
     \printtablerow{#5}{\printpoints{#4}}%
 }
 
 % Prints the subtask information and the points of the subtask as two columns.
 % Afterwards adds the point information for the subtask if enabled
-% @param the taskdescription
-% @param the points of the subtask
-% @param the subtask index (row)
-% @param the max group index
+% @param #1 the taskdescription
+% @param #2 the points of the subtask
+% @param #3 the subtask index (row)
+% @param #4 the max group index
 \newcommand{\createsubtask}[4]{%
     \ifthenelse{\equal{\showsubtaskid}{\enable}}%
     {#3}{}
-    \small #1 & #2%
+    \ifthenelse{\equal{\showdesc}{\enable}}%
+    {\small #1}{}%
+    &
+    \ifthenelse{\equal{\showmaxpoints}{\enable}}%
+    {\textbf{#2}}{}%
     \printtablerow{#4}{\printpoints{#3}}%
 }
 
@@ -425,7 +493,7 @@
 % The check is done by iterating all members and checking their entry date against the current
 % sheet number.
 % Expects \lastsheet and \curgroupid to be defined.
-% @param taskId The index of the processed task.
+% @param #1 taskId The index of the processed task.
 \newcounter{deadgroup}
 \newcommand{\printpoints}[1]{%
     % Set group as dead from the beginning
@@ -482,7 +550,7 @@
 
 % Add the cells to the sum row.
 % Also add point information if enabled by summing the task points.
-% @param maxGroup The max group index
+% @param #1 maxGroup The max group index
 \newcommand{\sumrow}[1]{%
     % Add missing thickline before sumrow
     \\ \thickhline
