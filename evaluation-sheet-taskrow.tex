@@ -1,3 +1,14 @@
+% This project allows you to create an evaluation sheet.
+% The table is automatically created an distributes the participants on top of the table as columns.
+% The assignments are aligned below each other as rows.
+% The data is read from .csv files that need to be present via the name specified in this document. Obviously you can adjust these names to your liking.
+% Furthermore this project allows to customize the apperance of the sheet, all options can be
+% seen and adjusted in the -Arguments- section.
+%
+% OBACHT: It is advised to order the assignments numerically in each sheet_XX.csv
+%
+% @author rwarnking
+% @licence MIT License
 \documentclass{article}
 
 %%%%%%%%%%%%
@@ -32,14 +43,17 @@
 % Used for displaying code inside the assignments (used for \lstset)
 \usepackage{listings}
 
+% ChkTeX (linter) will ignore material within this environment
+\newenvironment{ignore}{}{}
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Arguments
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Select or add a course name
-\def\coursename{example-coursename-1}
+\def\coursename{example-coursename-2}
 
 % Select or add a semester
-\def\semester{2018-19} % chktex 8
+\def\semester{2019} % chktex 8
 % \def\semester{2018}
 
 % Select or add a sheet (with leading zero)
@@ -139,9 +153,6 @@
 %%%%%%%%%%%%
 % Commands %
 %%%%%%%%%%%%
-% Remove extra margin left
-\setlength{\parindent}{0pt}
-
 % Thick Tabular Lines
 \makeatletter
 \newcommand{\thickhline}{%
@@ -650,6 +661,12 @@
             }
             \sumrow{\arabic{upperbound}}
         \end{tabularx}
+        % Allow to add further information at the end of the document
+        \begin{ignore}
+            \IfFileExists{\semester_\coursename/additional_info.tex}{
+                \input{\semester_\coursename/additional_info.tex}
+            }{}
+        \end{ignore}
         \clearpage
     }
 

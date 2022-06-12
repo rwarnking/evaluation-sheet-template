@@ -1,8 +1,7 @@
 % This project allows you to create an evaluation sheet.
 % The table is automatically created an distributes the assignments on top of the table as columns.
 % The groups are aligned below each other as rows.
-% The data is read from .csv files that need to be present under the in this document specified
-% name. Obviously you can adjust these names to your liking.
+% The data is read from .csv files that need to be present via the name specified in this document. Obviously you can adjust these names to your liking.
 % Furthermore this project allows to customize the apperance of the sheet, all options can be
 % seen and adjusted in the -Arguments- section.
 %
@@ -194,6 +193,18 @@
   \ifcat_\ifnum0<0#1 _\else A\fi
 }
 
+\makeatletter
+% xstring addition that extracts the leading number from a string.
+% Used to get the assignment number from a subtask.
+% https://tex.stackexchange.com/questions/35250/
+% @param #1 The string
+% @returl \Result the macro containing the number
+\newcommand*\ExtractLeadingNumber[1]{%
+    \IfBeginWith{#1}{ }{\StrBehind{#1}{ }[\temp@@]}{\def\temp@@{#1}}%
+    \IfDecimal\temp@@{\def\Result{#1}}{\StrBefore{#1}{\@xs@afterdecimal}[\Result]}%
+}
+\makeatother
+
 %%%%%%%%%%%%%%%%%%%%%%
 % Length definitions %
 %%%%%%%%%%%%%%%%%%%%%%
@@ -227,15 +238,6 @@
 % Make tablecell width accessible
 % https://tex.stackexchange.com/questions/341198/
 \newcommand\tablecellwidth{\TX@col@width}
-% xstring addition that extracts the leading number from a string.
-% Used to get the assignment number from a subtask.
-% https://tex.stackexchange.com/questions/35250/
-% @param #1 The string
-% @returl \Result the macro containing the number
-\newcommand*\ExtractLeadingNumber[1]{%
-    \IfBeginWith{#1}{ }{\StrBehind{#1}{ }[\temp@@]}{\def\temp@@{#1}}%
-    \IfDecimal\temp@@{\def\Result{#1}}{\StrBefore{#1}{\@xs@afterdecimal}[\Result]}%
-}
 \makeatother
 
 % Clips the input string to fit into a box with the given width.
