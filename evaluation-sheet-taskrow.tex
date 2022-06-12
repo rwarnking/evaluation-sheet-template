@@ -63,6 +63,8 @@
 \newcommand{\showdate}{\enable}
 % Enable or disable showing points
 \newcommand{\showpoints}{\enable}
+% Enable or disable showing id of subtask (e.g. 4a, 4b, 4c)
+\newcommand{\showsubtaskid}{\enable}
 
 % TODO automate
 \newcommand{\columns}{4}
@@ -369,6 +371,10 @@
 % @param the subtask index (row)
 % @param the max group index
 \newcommand{\createsubtask}[4]{%
+    \ifthenelse{\equal{\showsubtaskid}{\enable}}%
+    {
+        #3
+    }{}%
     \small #1 & #2%
     \printtablerow{#4}{\printpoints{#3}}%
 }
