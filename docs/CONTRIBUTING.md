@@ -1,8 +1,8 @@
-# Contributing to PDF games
+# Contributing to the Evaluation sheet template
 
 Thanks for thinking about contribution!
 
-Here you can find a set of guidelines for contributing to this github-project.
+Here you can find a set of guidelines for contributing to this GitHub-project.
 These are mostly guidelines, not rules.
 Use your best judgment, and feel free to propose changes to this document in a pull request.
 
@@ -15,7 +15,7 @@ Use your best judgment, and feel free to propose changes to this document in a p
 
 2. [Styleguides](#styleguides)
     * [Git Commit Messages](#git-commit-messages)
-    * [Python Styleguide](#python-styleguide)
+    * [JavaScript Styleguide](#javascript-styleguide)
 
 ## How Can I Contribute?
 
@@ -24,7 +24,7 @@ Use your best judgment, and feel free to propose changes to this document in a p
 #### Before Submitting A Bug Report
 Make sure to search for [issues](https://github.com/rwarnking/image-sorter/issues).
 that already mention this problem. If you find any, take a look
-if you can provide aditional information that is not mentioned already.
+if you can provide additional information that is not mentioned already.
 
 #### How Do I Submit A (Good) Bug Report?
 If you're unable to find an open issue addressing the problem,
@@ -39,7 +39,7 @@ create a new issue in this repository and provide the following information:
 #### How Do I Submit A (Good) Bug Fix?
 If you already fixed the bug by altering the code create a [pull request](#pull-requests).
 Ensure the PR description clearly describes the problem and solution, similar to how an issue
-whould. Furthermore include the relevant issue number if applicable.
+would. Furthermore include the relevant issue number if applicable.
 This allows the reviewer to get information why this pull request should be merged.
 
 ### Suggesting Enhancements
@@ -97,6 +97,6 @@ or other changes before your pull request can be ultimately accepted.
 
 TODO
 
-### Javascript Styleguide
+### JavaScript Styleguide
 
-See wiki for [naming convention](https://github.com/rwarnking/pdf-games/wiki/Naming-Convention).
+See wiki for [naming convention](https://github.com/rwarnking/evaluation-sheet-template/wiki/Naming-Convention).

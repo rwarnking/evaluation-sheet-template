@@ -18,12 +18,7 @@ name: Compile Evaluation Sheet
 ################################
 # Start the job on push to dev #
 ################################
-on:
-  push:
-    branches-ignore: []
-    # Remove the line above to run when pushing to master
-  pull_request:
-    branches: [main]
+on: [push, pull_request]
 
 ###############
 # Set the Job #
@@ -43,7 +38,7 @@ jobs:
       # Checkout the code base #
       ##########################
       - name: Set up Git repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       ####################
       # Run the compiler #
       ####################

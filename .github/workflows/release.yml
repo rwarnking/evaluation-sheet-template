@@ -20,20 +20,23 @@ jobs:
   ####################
   create_tag:
     # Name the Job
-    name: Create the Tag
+    name: Create the tag
     # Set the agent to run on
     runs-on: ubuntu-latest
+
+    outputs:
+      output1: ${{ steps.createversion.outputs.result }}
 
     # Load all steps
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       # Get last tag
       # https://github.com/marketplace/actions/get-latest-tag
-      - name: 'Get Previous tag'
+      - name: Get previous tag
         id: previoustag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
         with:
@@ -50,19 +53,29 @@ jobs:
           git config --global user.name 'rwarnking'
           git config --global user.email 'rwarnking@users.noreply.github.com'
       # Add and push tag
-      - name: Datermine version (Major, Minor, Patch)
+      - name: Determine version (Major, Minor, Patch)
+        id: createversion
         env:
           COMMITMSG: ${{ github.event.head_commit.message }}
         run: |
           if [[ "$COMMITMSG" =~ ^Major: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_major }} -m "New version ${{ steps.semvers.outputs.v_major }}"
           git push origin ${{ steps.semvers.outputs.v_major }}
+          echo "::set-output name=result::1"
           elif [[ "$COMMITMSG" =~ ^Minor: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_minor }} -m "New version ${{ steps.semvers.outputs.v_minor }}"
           git push origin ${{ steps.semvers.outputs.v_minor }}
+          echo "::set-output name=result::1"
           elif [[ "$COMMITMSG" =~ ^Patch: ]]; then
           git tag -a ${{ steps.semvers.outputs.v_patch }} -m "New version ${{ steps.semvers.outputs.v_patch }}"
           git push origin ${{ steps.semvers.outputs.v_patch }}
+          echo "::set-output name=result::1"
+          elif [[ "$COMMITMSG" =~ ^Update: ]]; then
+          git tag -a ${{ steps.semvers.outputs.v_patch }} -m "New version ${{ steps.semvers.outputs.v_patch }}"
+          git push origin ${{ steps.semvers.outputs.v_patch }}
+          echo "::set-output name=result::1"
+          else
+          echo "::set-output name=result::0"
           fi
 
   ##################
@@ -84,29 +97,31 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       # Get last tag
       # https://github.com/marketplace/actions/get-latest-tag
-      - name: 'Get Previous tag'
+      - name: Get previous tag
         id: previoustag
         uses: "WyriHaximus/github-action-get-previous-tag@v1"
       # Check if changelog file exists
       - name: Check file existence
+        if: ${{ needs.create_tag.outputs.output1 == '1' }}
         id: check_files
         uses: andstor/file-existence-action@v1
         with:
           files: changelogs/${{ steps.previoustag.outputs.tag }}.md
       # If not create a dummy file
       - name: Create if file does not exist
-        if: steps.check_files.outputs.files_exists == 'false'
+        if: ${{ needs.create_tag.outputs.output1 == '1' && steps.check_files.outputs.files_exists == 'false' }}
         uses: "finnp/create-file-action@master"
         env:
           FILE_NAME: changelogs/${{ steps.previoustag.outputs.tag }}.md
           FILE_DATA: "No Changelog present for version ${{ steps.previoustag.outputs.tag }}!"
       # Create release
       - name: Create release
+        if: ${{ needs.create_tag.outputs.output1 == '1' }}
         id: create_release
         uses: actions/create-release@latest
         env:
@@ -119,8 +134,10 @@ jobs:
           prerelease: false
       # Setup URL
       - id: set_upload_url
+        if: ${{ needs.create_tag.outputs.output1 == '1' }}
         run: echo "::set-output name=upload_url::${{ steps.create_release.outputs.upload_url }}"
       - id: set_version
+        if: ${{ needs.create_tag.outputs.output1 == '1' }}
         run: echo "::set-output name=version::${{ steps.previoustag.outputs.tag }}"
 
   #####################
@@ -137,9 +154,10 @@ jobs:
     steps:
       # Checkout the code base
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       # Upload layout: task rows
       - name: Upload
+        if: ${{ needs.create_tag.outputs.output1 == '1' }}
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -150,6 +168,7 @@ jobs:
           asset_content_type: text/plain
       # Upload layout: task cols
       - name: Upload
+        if: ${{ needs.create_tag.outputs.output1 == '1' }}
         uses: actions/upload-release-asset@v1.0.1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
